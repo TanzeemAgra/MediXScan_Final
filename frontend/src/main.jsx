@@ -31,7 +31,13 @@ import { LayoutsRoute } from "./router/layout-router";
 import { store } from "./store/index";
 import { Provider } from "react-redux";
 
-const router = createBrowserRouter([...LayoutsRoute], { basename: import.meta.env.BASE_URL });
+const router = createBrowserRouter([...LayoutsRoute], { 
+  basename: import.meta.env.BASE_URL,
+  future: {
+    v7_startTransition: true,
+    v7_relativeSplatPath: true
+  }
+});
 
 createRoot(document.getElementById('root')).render(
   <Fragment>

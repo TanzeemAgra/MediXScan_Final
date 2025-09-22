@@ -1,0 +1,440 @@
+// Advanced Radiology Dashboard Styles
+.advanced-radiology-dashboard {
+  .dashboard-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+
+    .display-6 {
+      background: linear-gradient(135deg, #0d6efd 0%, #6f42c1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    h1 {
+      color: #2c3e50;
+      font-weight: 700;
+    }
+  }
+
+  // Stats Widget
+  .radiology-stats-widget {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border: none;
+    box-shadow: 0 4px 25px rgba(0, 0, 0, 0.1);
+    border-radius: 15px;
+    overflow: hidden;
+
+    .stat-item {
+      padding: 1.5rem;
+      border-radius: 10px;
+      transition: all 0.3s ease;
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        font-size: 1.5rem;
+        color: white;
+        position: relative;
+        
+        &::before {
+          content: '';
+          position: absolute;
+          width: 70px;
+          height: 70px;
+          border-radius: 50%;
+          background: inherit;
+          opacity: 0.2;
+          animation: pulse 2s infinite;
+        }
+      }
+
+      .stat-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin: 0;
+        color: #2c3e50;
+        line-height: 1;
+      }
+
+      .stat-label {
+        color: #6c757d;
+        margin: 0.5rem 0 0;
+        font-size: 0.9rem;
+        font-weight: 500;
+      }
+    }
+  }
+
+  // Equipment Status Widget
+  .equipment-status-widget {
+    border: none;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
+
+    .equipment-item {
+      padding: 1rem;
+      border-radius: 8px;
+      background: #f8f9fa;
+      transition: all 0.3s ease;
+
+      &:hover {
+        background: #e9ecef;
+        transform: translateX(5px);
+      }
+
+      .equipment-status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        animation: blink 2s infinite;
+      }
+
+      h6 {
+        color: #2c3e50;
+        margin: 0;
+      }
+    }
+  }
+
+  // Workload Chart Widget
+  .workload-chart-widget {
+    border: none;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
+
+    .card-header {
+      background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+      border-bottom: 1px solid #e9ecef;
+    }
+  }
+
+  // Recent Exams Widget
+  .recent-exams-widget {
+    border: none;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
+
+    .table {
+      margin: 0;
+
+      th {
+        border: none;
+        background: #f8f9fa;
+        color: #495057;
+        font-weight: 600;
+        padding: 1rem 0.75rem;
+        font-size: 0.875rem;
+      }
+
+      td {
+        border: none;
+        padding: 1rem 0.75rem;
+        vertical-align: middle;
+        border-bottom: 1px solid #f1f3f4;
+
+        code {
+          background: #e7f3ff;
+          color: #0d6efd;
+          padding: 0.25rem 0.5rem;
+          border-radius: 4px;
+          font-size: 0.8rem;
+        }
+      }
+
+      tbody tr {
+        transition: all 0.3s ease;
+
+        &:hover {
+          background: rgba(13, 110, 253, 0.02);
+          transform: scale(1.01);
+        }
+      }
+    }
+
+    .btn-group {
+      .btn {
+        border-radius: 6px;
+        margin-right: 2px;
+        
+        &:last-child {
+          margin-right: 0;
+        }
+      }
+    }
+  }
+
+  // AI Insights Widget
+  .ai-insights-widget {
+    border: none;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+
+    .card-header {
+      background: transparent;
+      border-bottom: 1px solid #e9ecef;
+    }
+
+    .ai-feature-item {
+      padding: 1rem;
+      background: white;
+      border-radius: 8px;
+      border: 1px solid #e9ecef;
+      transition: all 0.3s ease;
+
+      &:hover {
+        border-color: #0d6efd;
+        box-shadow: 0 2px 10px rgba(13, 110, 253, 0.1);
+      }
+
+      .progress {
+        height: 6px;
+        background-color: #e9ecef;
+
+        .progress-bar {
+          border-radius: 3px;
+        }
+      }
+    }
+  }
+
+  // Responsive Design
+  @media (max-width: 768px) {
+    .dashboard-header {
+      padding: 1.5rem;
+      text-align: center;
+
+      .col-md-4 {
+        margin-top: 1rem;
+      }
+    }
+
+    .radiology-stats-widget {
+      .stat-item {
+        margin-bottom: 1rem;
+      }
+    }
+
+    .equipment-item {
+      margin-bottom: 1rem;
+    }
+
+    .table-responsive {
+      font-size: 0.875rem;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .dashboard-header {
+      .display-6 {
+        font-size: 2rem;
+      }
+
+      h1 {
+        font-size: 1.5rem;
+      }
+    }
+
+    .stat-number {
+      font-size: 2rem !important;
+    }
+
+    .btn-group {
+      flex-direction: column;
+      
+      .btn {
+        margin-bottom: 0.25rem;
+      }
+    }
+  }
+
+  // Animations
+  @keyframes pulse {
+    0% {
+      transform: scale(1);
+      opacity: 0.7;
+    }
+    50% {
+      transform: scale(1.1);
+      opacity: 0.3;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 0.7;
+    }
+  }
+
+  @keyframes blink {
+    0%, 50% {
+      opacity: 1;
+    }
+    51%, 100% {
+      opacity: 0.3;
+    }
+  }
+
+  // Dark Theme Support
+  [data-theme="dark"] & {
+    .dashboard-header {
+      background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+      
+      h1, p {
+        color: white;
+      }
+    }
+
+    .radiology-stats-widget,
+    .equipment-status-widget,
+    .workload-chart-widget,
+    .recent-exams-widget,
+    .ai-insights-widget {
+      background: #34495e;
+      color: white;
+
+      .card-header {
+        background: #2c3e50;
+        border-color: #4a5f7a;
+      }
+    }
+
+    .equipment-item {
+      background: #2c3e50;
+
+      &:hover {
+        background: #34495e;
+      }
+    }
+
+    .table {
+      color: white;
+
+      th {
+        background: #2c3e50;
+        color: #ecf0f1;
+      }
+
+      td {
+        border-color: #4a5f7a;
+      }
+
+      tbody tr:hover {
+        background: rgba(52, 73, 94, 0.5);
+      }
+    }
+  }
+
+  // Print Styles
+  @media print {
+    .dashboard-header,
+    .btn,
+    .dropdown,
+    .modal {
+      display: none !important;
+    }
+
+    .card {
+      box-shadow: none !important;
+      border: 1px solid #000 !important;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    .table {
+      font-size: 0.8rem;
+    }
+  }
+}
+
+// Custom Badge Styles
+.badge {
+  font-weight: 500;
+  padding: 0.35em 0.65em;
+  
+  &.bg-success {
+    background-color: #28a745 !important;
+  }
+  
+  &.bg-warning {
+    background-color: #ffc107 !important;
+    color: #212529 !important;
+  }
+  
+  &.bg-danger {
+    background-color: #dc3545 !important;
+  }
+  
+  &.bg-info {
+    background-color: #17a2b8 !important;
+  }
+  
+  &.bg-primary {
+    background-color: #0d6efd !important;
+  }
+  
+  &.bg-secondary {
+    background-color: #6c757d !important;
+  }
+}
+
+// Custom Button Styles
+.btn {
+  border-radius: 6px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+
+  &.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+  }
+}
+
+// Custom Progress Bar Styles
+.progress {
+  border-radius: 10px;
+  overflow: hidden;
+
+  .progress-bar {
+    border-radius: 10px;
+    transition: width 0.6s ease;
+  }
+}
+
+// Custom Dropdown Styles
+.dropdown-menu {
+  border: none;
+  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+
+  .dropdown-item {
+    padding: 0.5rem 1rem;
+    transition: all 0.3s ease;
+
+    &:hover {
+      background-color: #f8f9fa;
+      transform: translateX(2px);
+    }
+
+    &.active {
+      background-color: #0d6efd;
+    }
+  }
+}

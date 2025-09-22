@@ -1,6 +1,9 @@
 
 import DefaultLayout from "../layouts/defaultLayout"
+import BlankLayout from "../layouts/blank-layout"
 import Index from "../views"
+import DashboardWithRealData from "../views/dashboard-real-data"
+import LandingPage from "../views/LandingPage"
 
 // Dashboard Page
 import HospitalDashboardOne from "../views/dashboard-pages/hospital-dashboard-one"
@@ -30,6 +33,7 @@ import CTScans from "../views/radiology/ct-scans"
 import MRIResults from "../views/radiology/mri-results"
 import Ultrasound from "../views/radiology/ultrasound"
 import ScheduleImaging from "../views/radiology/schedule-imaging"
+import AdvancedRadiologyDashboard from "../views/radiology/AdvancedRadiologyDashboard"
 
 // UI Elements
 import Alerts from "../views/ui-elements/alerts";
@@ -100,22 +104,35 @@ import Timeline from "../views/extra-pages/pages-timeline"
 import PrivacyPolicy from "../views/extra-pages/privacy-policy"
 import PrivacySetting from "../views/extra-pages/privacy-setting"
 import TermsOfService from "../views/extra-pages/terms-of-service"
-import BlankLayout from "../layouts/blank-layout"
+import StaticPage from "../views/static/StaticPage"
+import { getStaticPage } from "../config/static-pages.config"
 import SignIn from "../views/auth/sign-in"
 import ConformMail from "../views/auth/confirm-mail"
 import SignUp from "../views/auth/sign-up"
 import RecoverPassword from "../views/auth/recover-password"
 import LockScreen from "../views/auth/lock-screen"
+import RBACLogin from "../views/auth/rbac-login"
+import { AuthRouteHandler } from "../components/RouteHandler"
 import { path } from "@amcharts/amcharts4/core"
 
 export const DefaultRoute = [
+  // Landing Page Route (No Layout)
+  {
+    path: "/",
+    element: <LandingPage />
+  },
+  // Main App Routes (With Layout)
   {
     path: "",
     element: <DefaultLayout />,
     children: [
       //  ------ Dashboard Route ------ 
       {
-        path: '/',
+        path: '/dashboard',
+        element: <DashboardWithRealData />
+      },
+      {
+        path: '/dashboard/dummy',
         element: <Index />
       },
       {
@@ -176,6 +193,10 @@ export const DefaultRoute = [
       },
 
       //  ------ Radiology Route ------ 
+      {
+        path: '/radiology/dashboard',
+        element: <AdvancedRadiologyDashboard />
+      },
       {
         path: '/radiology/xray-reports',
         element: <XRayReports />
@@ -416,6 +437,21 @@ export const DefaultRoute = [
         path: '/extra-pages/privacy-setting',
         element: <PrivacySetting />
       }
+      ,
+      // Public static pages (soft-coded from config)
+      { path: '/features', element: <StaticPage page={getStaticPage('features')} /> },
+      { path: '/security', element: <StaticPage page={getStaticPage('security')} /> },
+      { path: '/integrations', element: <StaticPage page={getStaticPage('integrations')} /> },
+      { path: '/docs', element: <StaticPage page={getStaticPage('docs')} /> },
+      { path: '/docs/api', element: <StaticPage page={getStaticPage('docs-api')} /> },
+      { path: '/help', element: <StaticPage page={getStaticPage('help')} /> },
+      { path: '/training', element: <StaticPage page={getStaticPage('training')} /> },
+      { path: '/webinars', element: <StaticPage page={getStaticPage('webinars')} /> },
+      { path: '/case-studies', element: <StaticPage page={getStaticPage('case-studies')} /> },
+      { path: '/privacy', element: <StaticPage page={getStaticPage('privacy')} /> },
+      { path: '/terms', element: <StaticPage page={getStaticPage('terms')} /> },
+      { path: '/cookies', element: <StaticPage page={getStaticPage('cookies')} /> },
+      { path: '/gdpr', element: <StaticPage page={getStaticPage('gdpr')} /> }
     ]
   }
 ]
@@ -432,11 +468,35 @@ export const BlankLayoutRouter = [
         element: <SignIn />
       },
       {
+        path: '/auth/login',
+        element: <SignIn />
+      },
+      {
+        path: '/login',
+        element: <SignIn />
+      },
+      {
+        path: '/auth/rbac-login',
+        element: <RBACLogin />
+      },
+      {
         path: '/auth/sign-up',
         element: <SignUp />
       },
       {
+        path: '/auth/register',
+        element: <SignUp />
+      },
+      {
+        path: '/register',
+        element: <SignUp />
+      },
+      {
         path: '/auth/recover-password',
+        element: <RecoverPassword />
+      },
+      {
+        path: '/auth/forgot-password',
         element: <RecoverPassword />
       },
       {

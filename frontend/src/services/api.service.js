@@ -1,0 +1,362 @@
+// API Service Layer for MediXScan Frontend
+import apiConfig from '../config/api.config';
+
+class ApiService {
+  constructor() {
+    this.baseURL = apiConfig.backend.baseURL;
+    this.timeout = apiConfig.backend.timeout;
+    this.retryAttempts = apiConfig.backend.retryAttempts;
+    this.retryDelay = apiConfig.backend.retryDelay;
+  }
+
+  // Build full URL from endpoint configuration
+  buildURL(endpointPath, params = {}) {
+    let url = this.baseURL + endpointPath;
+    
+    // Replace path parameters (e.g., {id} with actual id)
+    Object.keys(params).forEach(key => {
+      url = url.replace(`{${key}}`, params[key]);
+    });
+    
+    return url;
+  }
+
+  // Get authentication token from localStorage
+  getAuthToken() {
+    return localStorage.getItem('authToken');
+  }
+
+  // Build request headers
+  buildHeaders(customHeaders = {}) {
+    const headers = { ...apiConfig.headers.default };
+    
+    // Add auth token if available
+    const token = this.getAuthToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    return { ...headers, ...customHeaders };
+  }
+
+  // Handle API errors with soft coding configuration
+  handleError(error, context = '') {
+    if (apiConfig.features.errorReporting.logToConsole) {
+      console.error(`API Error [${context}]:`, error);
+    }
+
+    // Check if it's a network error
+    if (!error.response) {
+      throw {
+        type: 'network',
+        message: 'Network error. Please check your connection.',
+        original: error
+      };
+    }
+
+    const { status, data } = error.response;
+    
+    // Handle different status codes based on configuration
+    if (apiConfig.statusCodes.unauthorized === status) {
+      // Handle unauthorized access
+      localStorage.removeItem('authToken');
+      window.location.href = '/auth/login';
+      throw {
+        type: 'unauthorized',
+        message: 'Session expired. Please login again.',
+        status
+      };
+    }
+
+    if (apiConfig.statusCodes.clientError.includes(status)) {
+      throw {
+        type: 'client',
+        message: data?.message || 'Client error occurred',
+        details: data?.errors || data?.detail,
+        status
+      };
+    }
+
+    if (apiConfig.statusCodes.serverError.includes(status)) {
+      throw {
+        type: 'server',
+        message: 'Server error occurred. Please try again later.',
+        status
+      };
+    }
+
+    // Generic error
+    throw {
+      type: 'unknown',
+      message: data?.message || 'An unexpected error occurred',
+      status
+    };
+  }
+
+  // Generic request method with retry logic
+  async makeRequest(url, options = {}, context = '', attempt = 1) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+
+      const response = await fetch(url, {
+        ...options,
+        headers: this.buildHeaders(options.headers),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw { response: { status: response.status, data: await response.json() } };
+      }
+
+      return await response.json();
+    } catch (error) {
+      if (attempt < this.retryAttempts && 
+          (error.name === 'AbortError' || error.type === 'network')) {
+        console.warn(`Retry attempt ${attempt} for ${context}`);
+        await new Promise(resolve => setTimeout(resolve, this.retryDelay));
+        return this.makeRequest(url, options, context, attempt + 1);
+      }
+      
+      this.handleError(error, context);
+    }
+  }
+
+  // GET request
+  async get(endpointPath, params = {}, queryParams = {}) {
+    const url = new URL(this.buildURL(endpointPath, params));
+    
+    // Add query parameters
+    Object.keys(queryParams).forEach(key => {
+      if (queryParams[key] !== undefined && queryParams[key] !== null) {
+        url.searchParams.append(key, queryParams[key]);
+      }
+    });
+
+    return this.makeRequest(url.toString(), { method: 'GET' }, `GET ${endpointPath}`);
+  }
+
+  // POST request
+  async post(endpointPath, data = {}, params = {}) {
+    const url = this.buildURL(endpointPath, params);
+    
+    return this.makeRequest(url, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }, `POST ${endpointPath}`);
+  }
+
+  // PUT request
+  async put(endpointPath, data = {}, params = {}) {
+    const url = this.buildURL(endpointPath, params);
+    
+    return this.makeRequest(url, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    }, `PUT ${endpointPath}`);
+  }
+
+  // PATCH request
+  async patch(endpointPath, data = {}, params = {}) {
+    const url = this.buildURL(endpointPath, params);
+    
+    return this.makeRequest(url, {
+      method: 'PATCH',
+      body: JSON.stringify(data)
+    }, `PATCH ${endpointPath}`);
+  }
+
+  // DELETE request
+  async delete(endpointPath, params = {}) {
+    const url = this.buildURL(endpointPath, params);
+    
+    return this.makeRequest(url, {
+      method: 'DELETE'
+    }, `DELETE ${endpointPath}`);
+  }
+
+  // File upload request
+  async uploadFile(endpointPath, formData, params = {}) {
+    const url = this.buildURL(endpointPath, params);
+    
+    return this.makeRequest(url, {
+      method: 'POST',
+      body: formData,
+      headers: {} // Let browser set content-type for multipart
+    }, `UPLOAD ${endpointPath}`);
+  }
+}
+
+// Create singleton instance
+const apiService = new ApiService();
+
+// Specific service methods using endpoint configuration
+export const authService = {
+  login: (credentials) => apiService.post(apiConfig.endpoints.auth.login, credentials),
+  logout: () => apiService.post(apiConfig.endpoints.auth.logout),
+  register: (userData) => apiService.post(apiConfig.endpoints.auth.register, userData),
+  getProfile: () => apiService.get(apiConfig.endpoints.auth.profile),
+  changePassword: (passwords) => apiService.post(apiConfig.endpoints.auth.changePassword, passwords)
+};
+
+export const patientService = {
+  getAll: (queryParams = {}) => apiService.get(apiConfig.endpoints.patients.list, {}, queryParams),
+  getById: (id) => apiService.get(apiConfig.endpoints.patients.detail, { id }),
+  create: (patientData) => apiService.post(apiConfig.endpoints.patients.create, patientData),
+  update: (id, patientData) => apiService.put(apiConfig.endpoints.patients.update, patientData, { id }),
+  delete: (id) => apiService.delete(apiConfig.endpoints.patients.delete, { id }),
+  getStatistics: () => apiService.get(apiConfig.endpoints.patients.statistics),
+  search: (query) => apiService.get(apiConfig.endpoints.patients.search, {}, { q: query })
+};
+
+export const doctorService = {
+  getAll: (queryParams = {}) => apiService.get(apiConfig.endpoints.doctors.list, {}, queryParams),
+  getById: (id) => apiService.get(apiConfig.endpoints.doctors.detail, { id }),
+  create: (doctorData) => apiService.post(apiConfig.endpoints.doctors.create, doctorData),
+  update: (id, doctorData) => apiService.put(apiConfig.endpoints.doctors.update, doctorData, { id }),
+  delete: (id) => apiService.delete(apiConfig.endpoints.doctors.delete, { id }),
+  getSpecializations: () => apiService.get(apiConfig.endpoints.doctors.specializations),
+  getAvailability: (id) => apiService.get(apiConfig.endpoints.doctors.availability, { id }),
+  getStatistics: () => apiService.get(apiConfig.endpoints.doctors.statistics)
+};
+
+export const appointmentService = {
+  getAll: (queryParams = {}) => apiService.get(apiConfig.endpoints.appointments.list, {}, queryParams),
+  getById: (id) => apiService.get(apiConfig.endpoints.appointments.detail, { id }),
+  create: (appointmentData) => apiService.post(apiConfig.endpoints.appointments.create, appointmentData),
+  update: (id, appointmentData) => apiService.put(apiConfig.endpoints.appointments.update, appointmentData, { id }),
+  delete: (id) => apiService.delete(apiConfig.endpoints.appointments.delete, { id }),
+  getToday: () => apiService.get(apiConfig.endpoints.appointments.today),
+  getUpcoming: () => apiService.get(apiConfig.endpoints.appointments.upcoming),
+  getStatistics: () => apiService.get(apiConfig.endpoints.appointments.statistics),
+  getByDoctor: (doctorId) => apiService.get(apiConfig.endpoints.appointments.byDoctor, { doctorId }),
+  getByPatient: (patientId) => apiService.get(apiConfig.endpoints.appointments.byPatient, { patientId })
+};
+
+export const medicalRecordService = {
+  getAll: (queryParams = {}) => apiService.get(apiConfig.endpoints.medicalRecords.list, {}, queryParams),
+  getById: (id) => apiService.get(apiConfig.endpoints.medicalRecords.detail, { id }),
+  create: (recordData) => apiService.post(apiConfig.endpoints.medicalRecords.create, recordData),
+  update: (id, recordData) => apiService.put(apiConfig.endpoints.medicalRecords.update, recordData, { id }),
+  delete: (id) => apiService.delete(apiConfig.endpoints.medicalRecords.delete, { id }),
+  getByPatient: (patientId) => apiService.get(apiConfig.endpoints.medicalRecords.byPatient, { patientId }),
+  getRadiology: (queryParams = {}) => apiService.get(apiConfig.endpoints.medicalRecords.radiology, {}, queryParams),
+  getRadiologyTypes: () => apiService.get(apiConfig.endpoints.medicalRecords.radiologyTypes),
+  getStatistics: () => apiService.get(apiConfig.endpoints.medicalRecords.statistics)
+};
+
+export const dashboardService = {
+  getOverview: () => apiService.get(apiConfig.endpoints.dashboard.overview),
+  getPatientStats: () => apiService.get(apiConfig.endpoints.dashboard.patientStats),
+  getAppointmentStats: () => apiService.get(apiConfig.endpoints.dashboard.appointmentStats),
+  getDoctorStats: () => apiService.get(apiConfig.endpoints.dashboard.doctorStats),
+  getRecentActivities: () => apiService.get(apiConfig.endpoints.dashboard.recentActivities),
+  getChartData: (type) => apiService.get(apiConfig.endpoints.dashboard.chartData, {}, { type })
+};
+
+export const notificationService = {
+  getAll: () => apiService.get(apiConfig.endpoints.notifications.list),
+  getUnread: () => apiService.get(apiConfig.endpoints.notifications.unread),
+  markAsRead: (id) => apiService.patch(apiConfig.endpoints.notifications.markRead, {}, { id }),
+  markAllAsRead: () => apiService.patch(apiConfig.endpoints.notifications.markAllRead)
+};
+
+export const equipmentService = {
+  getAll: (queryParams = {}) => apiService.get(apiConfig.endpoints.equipment.list, {}, queryParams),
+  getById: (id) => apiService.get(apiConfig.endpoints.equipment.detail, { id }),
+  create: (equipmentData) => apiService.post(apiConfig.endpoints.equipment.create, equipmentData),
+  update: (id, equipmentData) => apiService.put(apiConfig.endpoints.equipment.update, equipmentData, { id }),
+  delete: (id) => apiService.delete(apiConfig.endpoints.equipment.delete, { id }),
+  
+  // Equipment Status Operations
+  getStatus: () => apiService.get(apiConfig.endpoints.equipment.status),
+  getMaintenance: () => apiService.get(apiConfig.endpoints.equipment.maintenance),
+  getUtilization: () => apiService.get(apiConfig.endpoints.equipment.utilization),
+  getStatistics: () => apiService.get(apiConfig.endpoints.equipment.statistics),
+  
+  // Equipment Type Operations
+  getByType: (type) => apiService.get(apiConfig.endpoints.equipment.byType, { type }),
+  
+  // Scheduling Operations
+  getSchedule: (id) => apiService.get(apiConfig.endpoints.equipment.schedule, { id }),
+  bookSlot: (id, slotData) => apiService.post(apiConfig.endpoints.equipment.bookSlot, slotData, { id }),
+  getAvailability: (id, queryParams = {}) => apiService.get(apiConfig.endpoints.equipment.availability, { id }, queryParams),
+  
+  // Maintenance Operations
+  getMaintenanceLog: (id) => apiService.get(apiConfig.endpoints.equipment.maintenanceLog, { id }),
+  addMaintenanceEntry: (id, maintenanceData) => apiService.post(apiConfig.endpoints.equipment.maintenanceLog, maintenanceData, { id }),
+  
+  // Performance Metrics
+  getPerformanceMetrics: (id, queryParams = {}) => apiService.get(apiConfig.endpoints.equipment.performanceMetrics, { id }, queryParams),
+  
+  // Soft-coded mock data for development (when backend is not available)
+  getMockEquipmentData: () => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          success: true,
+          data: {
+            totalEquipment: 24,
+            activeEquipment: 18,
+            maintenanceEquipment: 4,
+            offlineEquipment: 2,
+            utilizationRate: 75.8,
+            equipmentList: [
+              {
+                id: 1,
+                name: 'MRI Scanner - Siemens',
+                type: 'MRI',
+                status: 'active',
+                utilization: 85.2,
+                location: 'Radiology Wing A',
+                nextMaintenance: '2025-10-15',
+                lastUsed: '2025-09-22T08:30:00'
+              },
+              {
+                id: 2,
+                name: 'CT Scanner - GE Healthcare',
+                type: 'CT',
+                status: 'active',
+                utilization: 92.1,
+                location: 'Radiology Wing B',
+                nextMaintenance: '2025-09-30',
+                lastUsed: '2025-09-22T09:15:00'
+              },
+              {
+                id: 3,
+                name: 'X-Ray Machine - Philips',
+                type: 'XRAY',
+                status: 'maintenance',
+                utilization: 0,
+                location: 'Emergency Department',
+                nextMaintenance: '2025-09-25',
+                lastUsed: '2025-09-20T16:45:00'
+              },
+              {
+                id: 4,
+                name: 'Ultrasound - Samsung',
+                type: 'ULTRASOUND',
+                status: 'active',
+                utilization: 68.5,
+                location: 'Radiology Wing C',
+                nextMaintenance: '2025-11-05',
+                lastUsed: '2025-09-22T07:20:00'
+              }
+            ],
+            performanceMetrics: {
+              dailyScans: 156,
+              weeklyAverage: 142,
+              monthlyTotal: 4230,
+              equipmentUptime: 96.2,
+              averageWaitTime: 12.5
+            }
+          }
+        });
+      }, 800);
+    });
+  }
+};
+
+export default apiService;

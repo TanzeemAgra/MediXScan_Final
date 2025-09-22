@@ -8,14 +8,20 @@ import {
   setSetting
 } from "./store/setting/actions";
 
+// RBAC Provider
+import { RBACProvider } from "./hooks/useRBAC.jsx";
+import { SessionTimeoutHandler } from "./components/RBACMiddleware";
 
 function App({ children }) {
   const dispatch = useDispatch();
   dispatch(setSetting());
+  
   return (
-    <>
-      <div className="App">{children}</div>
-    </>
+    <RBACProvider>
+      <SessionTimeoutHandler>
+        <div className="App">{children}</div>
+      </SessionTimeoutHandler>
+    </RBACProvider>
   )
 }
 

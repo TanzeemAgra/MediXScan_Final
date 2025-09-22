@@ -18,5 +18,16 @@ export default defineConfig(({ mode }) => {
       outDir: "build",
       minify: true,
     },
+    define: {
+      // Define process.env for browser compatibility
+      'process.env': {
+        NODE_ENV: JSON.stringify(mode),
+      },
+      // Define global process object
+      global: 'globalThis',
+    },
+    optimizeDeps: {
+      include: ['react', 'react-dom']
+    }
   };
 });

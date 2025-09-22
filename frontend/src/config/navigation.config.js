@@ -1,11 +1,14 @@
+// Import routes configuration for soft coding
+import routesConfig from './routes.config.js';
+
 // Navigation Configuration for MediXScan Dashboard
 const navigationConfig = {
-  // Dashboard Items - Only keep the 3 specified items
+  // Dashboard Items - Using soft coded routes
   dashboardItems: [
     {
       id: 'medixscan-dashboard',
       title: 'MediXScan Dashboard',
-      path: '/',
+      path: routesConfig.dashboard.home,
       icon: 'ri-hospital-fill',
       tooltip: 'MediXScan Dashboard',
       enabled: true
@@ -13,7 +16,7 @@ const navigationConfig = {
     {
       id: 'doctor-dashboard',
       title: 'Doctor Dashboard',
-      path: '/dashboard-pages/dashboard-1',
+      path: routesConfig.dashboard.hospital1,
       icon: 'ri-stethoscope-fill',
       tooltip: 'Doctor Dashboard',
       enabled: true
@@ -21,7 +24,7 @@ const navigationConfig = {
     {
       id: 'patient-dashboard',
       title: 'Patient Dashboard',
-      path: '/dashboard-pages/patient-dashboard',
+      path: routesConfig.dashboard.patient,
       icon: 'ri-user-heart-fill',
       tooltip: 'Patient Dashboard',
       enabled: true
@@ -56,11 +59,12 @@ const navigationConfig = {
       icon: 'ri-scan-line',
       tooltip: 'Radiology Department',
       items: [
-        { title: 'X-Ray Reports', path: '/radiology/xray-reports', icon: 'ri-file-list-3-line' },
-        { title: 'CT Scans', path: '/radiology/ct-scans', icon: 'ri-scan-2-line' },
-        { title: 'MRI Results', path: '/radiology/mri-results', icon: 'ri-brain-line' },
-        { title: 'Ultrasound', path: '/radiology/ultrasound', icon: 'ri-heart-pulse-line' },
-        { title: 'Schedule Imaging', path: '/radiology/schedule', icon: 'ri-calendar-schedule-line' }
+        { title: 'Advanced Dashboard', path: '/radiology/dashboard', icon: 'ri-dashboard-3-line' },
+        { title: 'X-Ray Reports', path: routesConfig.radiology.xrayReports, icon: 'ri-file-list-3-line' },
+        { title: 'CT Scans', path: routesConfig.radiology.ctScans, icon: 'ri-scan-2-line' },
+        { title: 'MRI Results', path: routesConfig.radiology.mriResults, icon: 'ri-brain-line' },
+        { title: 'Ultrasound', path: routesConfig.radiology.ultrasound, icon: 'ri-heart-pulse-line' },
+        { title: 'Schedule Imaging', path: routesConfig.radiology.scheduleImaging, icon: 'ri-calendar-schedule-line' }
       ]
     },
     // Disabled Apps (can be re-enabled by setting enabled: true)
