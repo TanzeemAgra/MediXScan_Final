@@ -1,8 +1,8 @@
 {
   "version": 2,
   "name": "medixscan-frontend",
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
+  "buildCommand": "npm run build:vercel",
+  "outputDirectory": "build",
   "installCommand": "npm install",
   "devCommand": "npm run dev",
   "framework": "vite",
@@ -47,6 +47,9 @@
     "VITE_APP_NAME": "MediXScan",
     "VITE_APP_VERSION": "1.0.0",
     "VITE_RAILWAY_BACKEND": "https://medixscanfinal-production.up.railway.app",
+    "NODE_ENV": "production",
+    "SASS_SILENCE_DEPRECATIONS": "*",
+    "SASS_QUIET_DEPS": "1",
     "MODE": "production"
   },
   "redirects": [
