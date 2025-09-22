@@ -26,7 +26,7 @@
 @import "./xray-design-system/helper/mixins";
 @import "./xray-design-system/helper/reboot";
 
-@import "./custom/auth/authentication";
+@import "./custom/auth/_authentication";
 @import "./custom/ui-kit/ui-kit";
 @import "./custom/pages/chat.scss";
 @import "./custom/pages/_form-wizard-validate.scss";
