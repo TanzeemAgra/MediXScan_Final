@@ -24,6 +24,13 @@ import Calendar from "../views/calendar/calendar"
 // Chat Page
 import Chat from "../views/chat/chat"
 
+// Radiology Pages
+import XRayReports from "../views/radiology/xray-reports"
+import CTScans from "../views/radiology/ct-scans"
+import MRIResults from "../views/radiology/mri-results"
+import Ultrasound from "../views/radiology/ultrasound"
+import ScheduleImaging from "../views/radiology/schedule-imaging"
+
 // UI Elements
 import Alerts from "../views/ui-elements/alerts";
 import Badges from "../views/ui-elements/badges";
@@ -166,6 +173,28 @@ export const DefaultRoute = [
       {
         path: '/chat',
         element: <Chat />
+      },
+
+      //  ------ Radiology Route ------ 
+      {
+        path: '/radiology/xray-reports',
+        element: <XRayReports />
+      },
+      {
+        path: '/radiology/ct-scans',
+        element: <CTScans />
+      },
+      {
+        path: '/radiology/mri-results',
+        element: <MRIResults />
+      },
+      {
+        path: '/radiology/ultrasound',
+        element: <Ultrasound />
+      },
+      {
+        path: '/radiology/schedule',
+        element: <ScheduleImaging />
       },
 
       //  ------ UI Elements Route ------ 
