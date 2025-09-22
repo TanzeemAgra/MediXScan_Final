@@ -1,0 +1,12 @@
+# Runtime and Build Configuration for Railway
+
+[build]
+command = "pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate"
+
+[deploy]
+command = "gunicorn medixscan.wsgi:application --bind 0.0.0.0:$PORT"
+
+[env]
+# Environment variables will be set in Railway dashboard
+PYTHONUNBUFFERED = "1"
+PORT = "8000"

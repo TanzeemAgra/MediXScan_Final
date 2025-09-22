@@ -1,0 +1,19 @@
+<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <!-- Medical cross background -->
+  <rect x="0" y="0" width="32" height="32" rx="6" fill="#1976d2" />
+  
+  <!-- Medical cross -->
+  <rect x="12" y="4" width="8" height="24" fill="white" rx="1" />
+  <rect x="4" y="12" width="24" height="8" fill="white" rx="1" />
+  
+  <!-- Scanner/X-ray lines -->
+  <g stroke="#4fc3f7" stroke-width="1.5" opacity="0.8">
+    <line x1="2" y1="8" x2="8" y2="8" />
+    <line x1="24" y1="8" x2="30" y2="8" />
+    <line x1="2" y1="24" x2="8" y2="24" />
+    <line x1="24" y1="24" x2="30" y2="24" />
+  </g>
+  
+  <!-- Small pulse/scan indicator -->
+  <circle cx="24" cy="8" r="2" fill="#4caf50" opacity="0.9" />
+</svg>

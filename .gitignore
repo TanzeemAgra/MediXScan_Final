@@ -1,0 +1,179 @@
+# ================================
+# MedixScan - Healthcare Application 
+# Security & Compliance .gitignore
+# ================================
+
+# ⚠️  CRITICAL: Environment & Security Files
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.pfx
+secrets/
+credentials/
+
+# ⚠️  Database & Patient Data (HIPAA Compliance)
+*.db
+*.sqlite3
+db.sqlite3
+database/
+backups/
+patient_data/
+medical_records/
+*.sql
+*.dump
+
+# 🔐 Authentication & API Keys
+api_keys.json
+auth_config.json
+jwt_secret.txt
+oauth_credentials.json
+
+# 🏥 Healthcare Specific Files
+phi_data/
+patient_files/
+medical_images/
+lab_results/
+prescription_data/
+insurance_info/
+
+# 📦 Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+*.manifest
+*.spec
+pip-log.txt
+pip-delete-this-directory.txt
+
+# 🧪 Testing & Coverage
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+htmlcov/
+.testmondata
+
+# 📝 Jupyter Notebook
+.ipynb_checkpoints
+
+# 🌐 Django
+local_settings.py
+staticfiles/
+media/
+.static_storage/
+.media/
+django_cache/
+celerybeat-schedule
+celerybeat.pid
+
+# ⚡ Node.js & Frontend (if applicable)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# 🗂️ IDEs & Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.metadata
+.classpath
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# 🖥️ Operating System
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Desktop.ini
+Thumbs.db
+
+# 📊 Logs & Monitoring
+*.log
+logs/
+log/
+error.log
+access.log
+debug.log
+audit.log
+security.log
+
+# ☁️ Cloud & Deployment
+.railway/
+.vercel/
+.netlify/
+.aws/
+.gcp/
+terraform.tfstate
+terraform.tfstate.backup
+.terraform/
+
+# 🔧 Development Tools
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+
+# 📱 Mobile (if applicable)
+*.mobileprovision
+*.dSYM.zip
+*.dSYM
+
+# 🎯 Temporary Files
+tmp/
+temp/
+.tmp/
+.sass-cache/
+connect.lock
+typings/
+
+# 📋 Documentation Build
+docs/_build/
+site/
+.venv/
+
+# ⚠️ NEVER COMMIT THESE PATTERNS
+*password*
+*secret*
+*private*
+*credential*
+*api_key*
+*token*
+*auth*
