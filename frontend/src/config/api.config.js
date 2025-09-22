@@ -78,6 +78,16 @@ const apiConfig = {
         request: '/api/v1/medical-records/corrections/{id}/',
         accept: '/api/v1/medical-records/corrections/{id}/accept/',
         list: '/api/v1/medical-records/corrections/'
+      },
+      // Anonymization endpoints
+      anonymization: {
+        analyze: '/api/v1/medical-records/anonymization/analyze/',
+        anonymize: '/api/v1/medical-records/anonymization/anonymize/',
+        batchAnonymize: '/api/v1/medical-records/anonymization/batch/',
+        getInsights: '/api/v1/medical-records/anonymization/insights/',
+        exportAnonymized: '/api/v1/medical-records/anonymization/export/{id}/',
+        auditLog: '/api/v1/medical-records/anonymization/audit/',
+        config: '/api/v1/medical-records/anonymization/config/'
       }
     },
 

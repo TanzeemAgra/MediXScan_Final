@@ -282,6 +282,17 @@ export const medicalRecordService = {
   getStatistics: () => apiService.get(apiConfig.endpoints.medicalRecords.statistics)
 };
 
+export const anonymizationService = {
+  analyze: (textData) => apiService.post(apiConfig.endpoints.medicalRecords.anonymization.analyze, { text: textData }),
+  anonymize: (anonymizationRequest) => apiService.post(apiConfig.endpoints.medicalRecords.anonymization.anonymize, anonymizationRequest),
+  batchAnonymize: (batchRequest) => apiService.post(apiConfig.endpoints.medicalRecords.anonymization.batchAnonymize, batchRequest),
+  getInsights: (textData) => apiService.post(apiConfig.endpoints.medicalRecords.anonymization.getInsights, { text: textData }),
+  exportAnonymized: (id) => apiService.get(apiConfig.endpoints.medicalRecords.anonymization.exportAnonymized, { id }),
+  getAuditLog: (queryParams = {}) => apiService.get(apiConfig.endpoints.medicalRecords.anonymization.auditLog, {}, queryParams),
+  getConfig: () => apiService.get(apiConfig.endpoints.medicalRecords.anonymization.config),
+  updateConfig: (configData) => apiService.post(apiConfig.endpoints.medicalRecords.anonymization.config, configData)
+};
+
 export const dashboardService = {
   getOverview: () => apiService.get(apiConfig.endpoints.dashboard.overview),
   getPatientStats: () => apiService.get(apiConfig.endpoints.dashboard.patientStats),
