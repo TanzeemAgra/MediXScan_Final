@@ -59,12 +59,9 @@ const navigationConfig = {
       icon: 'ri-scan-line',
       tooltip: 'Radiology Department',
       items: [
-        { title: 'Advanced Dashboard', path: '/radiology/dashboard', icon: 'ri-dashboard-3-line' },
-        { title: 'X-Ray Reports', path: routesConfig.radiology.xrayReports, icon: 'ri-file-list-3-line' },
-        { title: 'CT Scans', path: routesConfig.radiology.ctScans, icon: 'ri-scan-2-line' },
-        { title: 'MRI Results', path: routesConfig.radiology.mriResults, icon: 'ri-brain-line' },
-        { title: 'Ultrasound', path: routesConfig.radiology.ultrasound, icon: 'ri-heart-pulse-line' },
-        { title: 'Schedule Imaging', path: routesConfig.radiology.scheduleImaging, icon: 'ri-calendar-schedule-line' }
+        { title: 'Home', path: routesConfig.radiology.dashboard, icon: 'ri-home-7-fill' },
+        { title: 'Report Correction', path: routesConfig.radiology.reportCorrection, icon: 'ri-file-edit-line' },
+        { title: 'Anonymizer', path: routesConfig.radiology.anonymizer, icon: 'ri-user-unfollow-line' }
       ]
     },
     // Disabled Apps (can be re-enabled by setting enabled: true)

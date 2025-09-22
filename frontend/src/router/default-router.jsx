@@ -34,6 +34,8 @@ import MRIResults from "../views/radiology/mri-results"
 import Ultrasound from "../views/radiology/ultrasound"
 import ScheduleImaging from "../views/radiology/schedule-imaging"
 import AdvancedRadiologyDashboard from "../views/radiology/AdvancedRadiologyDashboard"
+import ReportCorrection from "../views/radiology/report-correction"
+import Anonymizer from "../views/radiology/anonymizer"
 
 // UI Elements
 import Alerts from "../views/ui-elements/alerts";
@@ -196,6 +198,14 @@ export const DefaultRoute = [
       {
         path: '/radiology/dashboard',
         element: <AdvancedRadiologyDashboard />
+      },
+      {
+        path: '/radiology/report-correction',
+        element: <ReportCorrection />
+      },
+      {
+        path: '/radiology/anonymizer',
+        element: <Anonymizer />
       },
       {
         path: '/radiology/xray-reports',
@@ -438,20 +448,7 @@ export const DefaultRoute = [
         element: <PrivacySetting />
       }
       ,
-      // Public static pages (soft-coded from config)
-      { path: '/features', element: <StaticPage page={getStaticPage('features')} /> },
-      { path: '/security', element: <StaticPage page={getStaticPage('security')} /> },
-      { path: '/integrations', element: <StaticPage page={getStaticPage('integrations')} /> },
-      { path: '/docs', element: <StaticPage page={getStaticPage('docs')} /> },
-      { path: '/docs/api', element: <StaticPage page={getStaticPage('docs-api')} /> },
-      { path: '/help', element: <StaticPage page={getStaticPage('help')} /> },
-      { path: '/training', element: <StaticPage page={getStaticPage('training')} /> },
-      { path: '/webinars', element: <StaticPage page={getStaticPage('webinars')} /> },
-      { path: '/case-studies', element: <StaticPage page={getStaticPage('case-studies')} /> },
-      { path: '/privacy', element: <StaticPage page={getStaticPage('privacy')} /> },
-      { path: '/terms', element: <StaticPage page={getStaticPage('terms')} /> },
-      { path: '/cookies', element: <StaticPage page={getStaticPage('cookies')} /> },
-      { path: '/gdpr', element: <StaticPage page={getStaticPage('gdpr')} /> }
+  // Public static pages are handled by BlankLayoutRouter to keep them outside the authenticated app layout
     ]
   }
 ]
@@ -507,6 +504,21 @@ export const BlankLayoutRouter = [
         path: '/auth/lock-screen',
         element: <LockScreen />
       },
+
+      // Public static pages (soft-coded from config) - keep outside main app layout
+      { path: '/features', element: <StaticPage page={getStaticPage('features')} /> },
+      { path: '/security', element: <StaticPage page={getStaticPage('security')} /> },
+      { path: '/integrations', element: <StaticPage page={getStaticPage('integrations')} /> },
+      { path: '/docs', element: <StaticPage page={getStaticPage('docs')} /> },
+      { path: '/docs/api', element: <StaticPage page={getStaticPage('docs-api')} /> },
+      { path: '/help', element: <StaticPage page={getStaticPage('help')} /> },
+      { path: '/training', element: <StaticPage page={getStaticPage('training')} /> },
+      { path: '/webinars', element: <StaticPage page={getStaticPage('webinars')} /> },
+      { path: '/case-studies', element: <StaticPage page={getStaticPage('case-studies')} /> },
+      { path: '/privacy', element: <StaticPage page={getStaticPage('privacy')} /> },
+      { path: '/terms', element: <StaticPage page={getStaticPage('terms')} /> },
+      { path: '/cookies', element: <StaticPage page={getStaticPage('cookies')} /> },
+  { path: '/gdpr', element: <StaticPage page={getStaticPage('gdpr')} /> },
 
       //  ------ Extra Page Route ------ 
       {

@@ -3,6 +3,8 @@
 
 import { useState, useEffect, createContext, useContext, useMemo } from 'react';
 import rbacConfig, { hasPermission, canAccessModule, getFeatureFlagsForRole, isAuthorized } from '../config/rbac.config';
+import authConfig from '../config/auth.config';
+import { authService } from '../services/api.service';
 
 // RBAC Context
 const RBACContext = createContext();
@@ -54,29 +56,52 @@ export const RBACProvider = ({ children }) => {
     try {
       setLoading(true);
       setError(null);
+      // If configured, call backend auth; otherwise fallback to mock user
+      if (authConfig.useBackendAuth) {
+        const payload = {
+          username: credentials.username || credentials.email,
+          password: credentials.password
+        };
 
-      // Mock login - replace with actual API call
-      const mockUser = {
-        id: 1,
-        username: credentials.username,
-        email: credentials.email || `${credentials.username}@medixscan.com`,
-        role: credentials.role || 'radiologist',
-        firstName: 'John',
-        lastName: 'Doe',
-        avatar: '/assets/images/user/01.jpg',
-        department: 'Radiology',
-        lastLogin: new Date().toISOString()
-      };
+        const response = await authService.login(payload);
+        if (response && response.tokens && response.user) {
+          const userData = response.user;
+          const token = response.tokens.access;
 
-      // Store user data
-      localStorage.setItem('medixscan_user', JSON.stringify(mockUser));
-      localStorage.setItem('medixscan_auth_token', 'mock-jwt-token');
-      
-      setUser(mockUser);
-      setRole(mockUser.role);
-      setPermissions(rbacConfig.rolePermissions[mockUser.role] || rbacConfig.rolePermissions.viewer);
-      
-      return { success: true, user: mockUser };
+          localStorage.setItem('medixscan_user', JSON.stringify(userData));
+          localStorage.setItem('medixscan_auth_token', token);
+
+          setUser(userData);
+          setRole(userData.role || 'viewer');
+          setPermissions(rbacConfig.rolePermissions[userData.role] || rbacConfig.rolePermissions.viewer);
+
+          return { success: true, user: userData };
+        }
+        return { success: false, error: 'Invalid login response from server' };
+      } else {
+        // Mock login for development/demo
+        const mockUser = {
+          id: 1,
+          username: credentials.username,
+          email: credentials.email || `${credentials.username}@medixscan.com`,
+          role: credentials.role || 'radiologist',
+          firstName: 'John',
+          lastName: 'Doe',
+          avatar: '/assets/images/user/01.jpg',
+          department: 'Radiology',
+          lastLogin: new Date().toISOString()
+        };
+
+        // Store user data
+        localStorage.setItem('medixscan_user', JSON.stringify(mockUser));
+        localStorage.setItem('medixscan_auth_token', 'mock-jwt-token');
+        
+        setUser(mockUser);
+        setRole(mockUser.role);
+        setPermissions(rbacConfig.rolePermissions[mockUser.role] || rbacConfig.rolePermissions.viewer);
+        
+        return { success: true, user: mockUser };
+      }
     } catch (error) {
       setError(error);
       return { success: false, error: error.message };

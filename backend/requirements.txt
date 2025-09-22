@@ -27,6 +27,7 @@ python-decouple==3.8
 django-extensions==3.2.3
 django-filter==23.2
 django-import-export==3.2.0
+requests==2.31.0
 
 # Async & Background Tasks
 celery==5.3.1
@@ -41,6 +42,10 @@ django-health-check==3.17.0
 django-debug-toolbar==4.2.0
 factory-boy==3.3.0
 pytest-django==4.5.2
+
+# Small Hugging Face PoC model support (CPU)
+transformers==4.34.0
+torch==2.2.0
 
 # Production
 gunicorn==21.2.0

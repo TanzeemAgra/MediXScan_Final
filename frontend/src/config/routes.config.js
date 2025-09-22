@@ -41,6 +41,8 @@ const routesConfig = {
     dashboard: '/radiology/dashboard',
     xrayReports: '/radiology/xray-reports',
     ctScans: '/radiology/ct-scans',
+    reportCorrection: '/radiology/report-correction',
+    anonymizer: '/radiology/anonymizer',
     mriResults: '/radiology/mri-results',
     ultrasound: '/radiology/ultrasound',
     scheduleImaging: '/radiology/schedule'

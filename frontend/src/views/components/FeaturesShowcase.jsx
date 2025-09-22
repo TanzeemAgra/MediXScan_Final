@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Container, Row, Col, Card, Button, Badge, Carousel } from 'react-bootstrap';
 import './FeaturesShowcase.scss';
 
@@ -6,6 +6,27 @@ const FeaturesShowcase = ({ config, onCTAAction, animationConfig = {}, getAssetP
   if (!config || !config.enabled) return null;
 
   const { section, items, showcase } = config;
+
+  const [isDesktop, setIsDesktop] = useState(true);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mq = window.matchMedia('(min-width: 768px)');
+    const update = () => setIsDesktop(mq.matches);
+    update();
+    try {
+      mq.addEventListener('change', update);
+    } catch (e) {
+      mq.addListener(update);
+    }
+    return () => {
+      try {
+        mq.removeEventListener('change', update);
+      } catch (e) {
+        mq.removeListener(update);
+      }
+    };
+  }, []);
 
   return (
     <section id="features" className="features-showcase">
@@ -76,11 +97,13 @@ const FeaturesShowcase = ({ config, onCTAAction, animationConfig = {}, getAssetP
                     <Col lg={6}>
                       <div className="feature-visual">
                         <div className="mockup-container">
-                          {animationConfig.enableFeatureVideos && item.video ? (
+                          {animationConfig.enableFeatureVideos && item.video && isDesktop ? (
                             // Render video on desktop; mobile will show image via CSS or JS
+                            // Use getAssetPath directly (don't strip leading slash) to avoid '/assets/assets/..' duplication
                             <video
                               className="img-fluid feature-video"
-                              src={getAssetPath(item.video.replace(/^\//, ''))}
+                              src={getAssetPath(item.video)}
+                              poster={getAssetPath(item.image)}
                               autoPlay
                               muted
                               loop
