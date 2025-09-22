@@ -87,7 +87,7 @@ export const environmentConfig = {
   },
   
   production: {
-    apiUrl: viteEnv.VITE_API_URL || 'https://api.medixscan.com',
+    apiUrl: viteEnv.VITE_API_URL || 'https://medixscanfinal-production.up.railway.app',
     frontendUrl: viteEnv.VITE_FRONTEND_URL || 'https://medixscan.vercel.app',
     debugEnabled: false,
     logLevel: 'error',

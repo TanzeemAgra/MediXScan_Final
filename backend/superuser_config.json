@@ -1,0 +1,62 @@
+{
+  "superusers": [
+    {
+      "email": "drnajeeb@gmail.com",
+      "password": "Najeeb@123", 
+      "first_name": "Dr. Najeeb",
+      "last_name": "Khan",
+      "description": "Senior Medical Officer - Radiology Department",
+      "department": "Radiology",
+      "role": "Senior Doctor",
+      "permissions": {
+        "is_staff": true,
+        "is_superuser": true,
+        "is_active": true,
+        "can_view_all_patients": true,
+        "can_manage_appointments": true,
+        "can_access_reports": true
+      }
+    },
+    {
+      "email": "admin@medixscan.com",
+      "password": "Admin@2024",
+      "first_name": "System", 
+      "last_name": "Administrator",
+      "description": "System Administrator Account",
+      "department": "IT",
+      "role": "System Admin",
+      "permissions": {
+        "is_staff": true,
+        "is_superuser": true,
+        "is_active": true,
+        "can_view_all_patients": true,
+        "can_manage_appointments": true,
+        "can_access_reports": true
+      }
+    }
+  ],
+  "default_permissions": {
+    "doctor_permissions": [
+      "view_patient",
+      "add_medical_record", 
+      "change_medical_record",
+      "view_appointment",
+      "add_appointment",
+      "change_appointment"
+    ],
+    "staff_permissions": [
+      "view_patient",
+      "add_patient",
+      "change_patient",
+      "view_appointment", 
+      "add_appointment",
+      "change_appointment"
+    ]
+  },
+  "security_settings": {
+    "password_min_length": 8,
+    "require_special_chars": true,
+    "session_timeout_minutes": 60,
+    "max_login_attempts": 5
+  }
+}

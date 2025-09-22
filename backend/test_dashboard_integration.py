@@ -6,8 +6,10 @@ Tests the dashboard API endpoints and displays formatted results.
 import requests
 import json
 from datetime import datetime
+import os
 
-BASE_URL = "http://localhost:8000/api/v1/dashboard"
+# Soft coded base URL - automatically detect Railway production or local
+BASE_URL = os.environ.get('RAILWAY_API_URL', 'https://medixscanfinal-production.up.railway.app/api/v1/dashboard') if os.environ.get('RAILWAY_ENVIRONMENT') else "http://localhost:8000/api/v1/dashboard"
 
 def test_endpoint(endpoint_name, url):
     """Test a single dashboard endpoint"""

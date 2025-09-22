@@ -2,9 +2,11 @@
 import environmentConfig from './environment.config';
 
 const apiConfig = {
-  // Backend API Settings - using environment config for soft coding
+  // Backend API Settings - using environment config for soft coding with Railway production URL
   backend: {
-    baseURL: environmentConfig.buildApiUrl() || 'http://localhost:8000',
+    baseURL: environmentConfig.buildApiUrl() || 
+             import.meta.env.VITE_API_URL || 
+             (import.meta.env.MODE === 'production' ? 'https://medixscanfinal-production.up.railway.app' : 'http://localhost:8000'),
     version: 'v1',
     timeout: parseInt(import.meta.env.VITE_API_TIMEOUT) || 10000,
     retryAttempts: parseInt(import.meta.env.VITE_API_RETRY_ATTEMPTS) || 3,

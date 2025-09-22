@@ -176,13 +176,26 @@ SIMPLE_JWT = {
     'SIGNING_KEY': config('JWT_SECRET_KEY', default=SECRET_KEY),
 }
 
-# CORS Configuration
+# CORS Configuration - Soft coded for Railway deployment
 CORS_ALLOWED_ORIGINS = [
     config('FRONTEND_URL', default='http://localhost:3000'),
     "http://localhost:5173",  # Vite dev server
     "http://127.0.0.1:3000",
     "http://127.0.0.1:5173",
+    # Production frontends
+    "https://medixscan.vercel.app",
+    "https://medixscanfinal.vercel.app", 
+    "https://medixscan-frontend.netlify.app",
+    # Add your actual frontend domain here when deployed
 ]
+
+# Railway-specific CORS settings
+if 'RAILWAY_ENVIRONMENT' in os.environ:
+    CORS_ALLOWED_ORIGINS.extend([
+        "https://medixscan.vercel.app",
+        "https://medixscanfinal.vercel.app",
+        "https://medixscanfinal-frontend.vercel.app",
+    ])
 
 CORS_ALLOW_CREDENTIALS = True
 

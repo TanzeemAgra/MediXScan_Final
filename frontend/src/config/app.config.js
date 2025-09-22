@@ -8,9 +8,11 @@ const config = {
     title: 'MediXScan - Medical Management System'
   },
   
-  // API Configuration
+  // API Configuration - Soft coded for Railway production
   api: {
-    baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1',
+    baseURL: import.meta.env.VITE_API_BASE_URL || 
+             import.meta.env.VITE_API_URL ||
+             (import.meta.env.MODE === 'production' ? 'https://medixscanfinal-production.up.railway.app/api/v1' : 'http://localhost:8000/api/v1'),
     timeout: 30000
   },
   
@@ -21,8 +23,10 @@ const config = {
       port: 5173
     },
     backend: {
-      url: import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000',
-      port: 8000
+      url: import.meta.env.VITE_BACKEND_URL || 
+           import.meta.env.VITE_API_URL ||
+           (import.meta.env.MODE === 'production' ? 'https://medixscanfinal-production.up.railway.app' : 'http://localhost:8000'),
+      port: import.meta.env.MODE === 'production' ? 443 : 8000
     }
   },
   
