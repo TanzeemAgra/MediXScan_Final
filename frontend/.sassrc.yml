@@ -1,0 +1,29 @@
+# Soft-coded SASS configuration for build environments
+# This file provides environment-specific SASS compiler settings
+
+# Silence deprecation warnings in production builds
+deprecations:
+  - legacy-js-api
+  - import
+  - global-builtin
+  - color-functions
+
+# Quiet dependency warnings
+quiet-deps: true
+
+# Output style for different environments
+style: compressed
+
+# Source maps for development
+source-map: false
+
+# Character encoding
+charset: true
+
+# Math precision
+precision: 10
+
+# Load paths for @import resolution
+load-paths:
+  - src/assets/scss
+  - node_modules

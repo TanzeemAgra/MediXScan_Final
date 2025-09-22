@@ -1,0 +1,137 @@
+/**
+ * Modern SASS Functions Override - Soft Coding Solution
+ * This file provides modern replacements for deprecated SASS color functions
+ * Using the new color.channel() syntax instead of deprecated red(), green(), blue()
+ */
+
+@use "sass:color";
+@use "sass:math";
+@use "sass:map";
+
+// Modern color channel extraction functions (replaces deprecated red(), green(), blue())
+@function get-red($color) {
+  @return color.channel($color, "red", $space: rgb);
+}
+
+@function get-green($color) {
+  @return color.channel($color, "green", $space: rgb);
+}
+
+@function get-blue($color) {
+  @return color.channel($color, "blue", $space: rgb);
+}
+
+// Modern color mixing (replaces deprecated mix())
+@function mix-colors($color1, $color2, $weight: 50%) {
+  @return color.mix($color1, $color2, $weight);
+}
+
+// Modern unit function (replaces deprecated unit())
+@function get-unit($value) {
+  @return math.unit($value);
+}
+
+// Soft-coded RGB extraction for compatibility
+@function to-rgb-modern($color) {
+  @return (
+    "r": get-red($color),
+    "g": get-green($color), 
+    "b": get-blue($color)
+  );
+}
+
+// Modern luminance calculation using new functions
+@function luminance-modern($color) {
+  $rgb: to-rgb-modern($color);
+  $red: map.get($rgb, "r") / 255;
+  $green: map.get($rgb, "g") / 255;
+  $blue: map.get($rgb, "b") / 255;
+  
+  // Apply gamma correction
+  @each $channel in ($red, $green, $blue) {
+    @if $channel <= 0.03928 {
+      $channel: $channel / 12.92;
+    } @else {
+      $channel: math.pow(($channel + 0.055) / 1.055, 2.4);
+    }
+  }
+  
+  // Calculate luminance
+  @return 0.2126 * $red + 0.7152 * $green + 0.0722 * $blue;
+}
+
+// Modern tint function
+@function tint-modern($color, $weight: 50%) {
+  @return mix-colors(white, $color, $weight);
+}
+
+// Modern shade function  
+@function shade-modern($color, $weight: 50%) {
+  @return mix-colors(black, $color, $weight);
+}
+
+// Soft-coded color contrast calculation
+@function color-contrast-modern($background, $color-light: #fff, $color-dark: #000, $min-contrast-ratio: 4.5) {
+  $background-luminance: luminance-modern($background);
+  $light-contrast: ($background-luminance + 0.05) / (luminance-modern($color-light) + 0.05);
+  $dark-contrast: (luminance-modern($color-dark) + 0.05) / ($background-luminance + 0.05);
+  
+  @if $light-contrast > $dark-contrast {
+    @return if($light-contrast >= $min-contrast-ratio, $color-light, $color-dark);
+  } @else {
+    @return if($dark-contrast >= $min-contrast-ratio, $color-dark, $color-light);
+  }
+}
+
+// Environment-aware function selection (soft coding pattern)
+$use-modern-functions: true !default;
+
+// Wrapper functions that choose between modern and legacy (for gradual migration)
+@function smart-red($color) {
+  @if $use-modern-functions {
+    @return get-red($color);
+  } @else {
+    @return red($color); // Fallback for older environments
+  }
+}
+
+@function smart-green($color) {
+  @if $use-modern-functions {
+    @return get-green($color);
+  } @else {
+    @return green($color);
+  }
+}
+
+@function smart-blue($color) {
+  @if $use-modern-functions {
+    @return get-blue($color);
+  } @else {
+    @return blue($color);
+  }
+}
+
+@function smart-mix($color1, $color2, $weight: 50%) {
+  @if $use-modern-functions {
+    @return mix-colors($color1, $color2, $weight);
+  } @else {
+    @return mix($color1, $color2, $weight);
+  }
+}
+
+// Export modern functions for use in other files
+@function modern-rgb($color) {
+  @return to-rgb-modern($color);
+}
+
+@function modern-luminance($color) {
+  @return luminance-modern($color);
+}
+
+@function modern-tint($color, $weight: 50%) {
+  @return tint-modern($color, $weight);
+}
+
+@function modern-shade($color, $weight: 50%) {
+  @return shade-modern($color, $weight);
+}

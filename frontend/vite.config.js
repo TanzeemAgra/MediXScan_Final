@@ -9,6 +9,31 @@ export default defineConfig(({ mode }) => {
   return {
     base: baseUrl,
     plugins: [react()],
+    css: {
+      preprocessorOptions: {
+        scss: {
+          // Soft-coded SASS configuration to handle deprecation warnings
+          silenceDeprecations: ['legacy-js-api', 'import', 'global-builtin', 'color-functions'],
+          quietDeps: true,
+          logger: {
+            // Custom logger to suppress deprecation warnings in production
+            warn: function(message) {
+              // Suppress specific deprecation warnings that don't affect functionality
+              if (message.includes('DEPRECATION WARNING') || 
+                  message.includes('red() is deprecated') ||
+                  message.includes('green() is deprecated') ||
+                  message.includes('blue() is deprecated') ||
+                  message.includes('mix() is deprecated') ||
+                  message.includes('legacy-js-api') ||
+                  message.includes('global-builtin')) {
+                return; // Suppress these warnings
+              }
+              console.warn(message);
+            }
+          }
+        }
+      }
+    },
     server: {
       port: 5173,
       host: '0.0.0.0',

@@ -1,0 +1,31 @@
+{
+  "name": "medixscan-build-config",
+  "version": "1.0.0",
+  "description": "Soft-coded build configuration for different environments",
+  "scripts": {
+    "build:local": "cross-env NODE_ENV=production SASS_SILENCE_DEPRECATIONS=legacy-js-api,import,global-builtin,color-functions vite build",
+    "build:vercel": "cross-env NODE_ENV=production SASS_SILENCE_DEPRECATIONS=* SASS_QUIET_DEPS=1 vite build",
+    "build:safe": "cross-env NODE_ENV=production SASS_OPTIONS=\"--quiet-deps --silence-deprecations=legacy-js-api,import,global-builtin,color-functions\" vite build"
+  },
+  "sassConfig": {
+    "silenceDeprecations": ["legacy-js-api", "import", "global-builtin", "color-functions"],
+    "quietDeps": true,
+    "outputStyle": "compressed",
+    "sourceMap": false
+  },
+  "buildEnvironments": {
+    "development": {
+      "sassWarnings": "show",
+      "sourceMap": true
+    },
+    "production": {
+      "sassWarnings": "suppress",
+      "sourceMap": false
+    },
+    "vercel": {
+      "sassWarnings": "suppress",
+      "sourceMap": false,
+      "silenceAll": true
+    }
+  }
+}

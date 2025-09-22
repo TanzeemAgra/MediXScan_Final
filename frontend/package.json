@@ -6,13 +6,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "cross-env SASS_SILENCE_DEPRECATIONS=legacy-js-api,import,global-builtin,color-functions vite build",
+    "build:vercel": "cross-env NODE_ENV=production SASS_SILENCE_DEPRECATIONS=* SASS_QUIET_DEPS=1 vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "serve": "vite preview --port 3000",
     "install-deps": "npm install",
     "clean": "rm -rf build node_modules",
-    "vercel-build": "npm run build"
+    "vercel-build": "npm run build:vercel"
   },
   "dependencies": {
     "@amcharts/amcharts4": "^4.10.39",
@@ -55,7 +56,7 @@
     "react-redux": "^9.1.2",
     "react-responsive-masonry": "^2.1.7",
     "react-router-dom": "^6.26.1",
-    "sass": "^1.77.8",
+    "sass": "1.69.5",
     "sass-loader": "^16.0.1",
     "smooth-scrollbar": "^8.8.4",
     "smooth-scrollbar-react": "^2.4.1",
@@ -67,6 +68,7 @@
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
+    "cross-env": "^10.0.0",
     "eslint": "^9.9.0",
     "eslint-plugin-react": "^7.35.0",
     "eslint-plugin-react-hooks": "^5.1.0-rc.0",
