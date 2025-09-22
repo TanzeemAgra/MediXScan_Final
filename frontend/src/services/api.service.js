@@ -290,7 +290,79 @@ export const anonymizationService = {
   exportAnonymized: (id) => apiService.get(apiConfig.endpoints.medicalRecords.anonymization.exportAnonymized, { id }),
   getAuditLog: (queryParams = {}) => apiService.get(apiConfig.endpoints.medicalRecords.anonymization.auditLog, {}, queryParams),
   getConfig: () => apiService.get(apiConfig.endpoints.medicalRecords.anonymization.config),
-  updateConfig: (configData) => apiService.post(apiConfig.endpoints.medicalRecords.anonymization.config, configData)
+  updateConfig: (configData) => apiService.post(apiConfig.endpoints.medicalRecords.anonymization.config, configData),
+  
+  // File processing methods
+  processFile: async (file, options = {}) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    // Add options to form data
+    Object.keys(options).forEach(key => {
+      formData.append(key, options[key]);
+    });
+
+    try {
+      const response = await fetch(apiService.buildURL(apiConfig.endpoints.medicalRecords.anonymization.processFile), {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiService.getAuthToken() || ''}`,
+          // Note: Don't set Content-Type for FormData, let browser set it
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('File processing error:', error);
+      throw error;
+    }
+  },
+
+  getSupportedFormats: () => apiService.get(apiConfig.endpoints.medicalRecords.anonymization.supportedFormats),
+  
+  downloadAnonymizedFile: (requestId, format = 'txt') => {
+    const url = apiService.buildURL(apiConfig.endpoints.medicalRecords.anonymization.exportAnonymized, { id: requestId });
+    const downloadUrl = `${url}?format=${format}`;
+    
+    // Create download link
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = `anonymized_${requestId}.${format}`;
+    
+    // Add authorization header for download
+    const token = apiService.getAuthToken();
+    if (token) {
+      // For file downloads, we need to handle authorization differently
+      // This creates a temporary download with auth
+      fetch(downloadUrl, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      .then(response => response.blob())
+      .then(blob => {
+        const url = URL.createObjectURL(blob);
+        link.href = url;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      })
+      .catch(error => {
+        console.error('Download failed:', error);
+        throw error;
+      });
+    } else {
+      // No auth needed or fallback
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  }
 };
 
 export const dashboardService = {

@@ -5,6 +5,8 @@ import {
 } from 'react-bootstrap';
 import advancedAnonymizationService from '../../services/advanced-anonymization.service';
 import anonymizationConfigService from '../../services/anonymization-config.service';
+import fileProcessingService from '../../services/file-processing.service';
+import { anonymizationService } from '../../services/api.service';
 
 const Anonymizer = () => {
   const [text, setText] = useState('');
@@ -22,6 +24,21 @@ const Anonymizer = () => {
   const [selectedDetections, setSelectedDetections] = useState(new Set());
   const [customRules, setCustomRules] = useState({});
   const textAreaRef = useRef(null);
+  
+  // File upload states
+  const [uploadedFile, setUploadedFile] = useState(null);
+  const [fileProcessing, setFileProcessing] = useState(false);
+  const [fileResult, setFileResult] = useState(null);
+  const [supportedFormats, setSupportedFormats] = useState([]);
+  const [dragActive, setDragActive] = useState(false);
+  const [inputMode, setInputMode] = useState('text'); // 'text' or 'file'
+  const fileInputRef = useRef(null);
+
+  // Initialize supported formats
+  useEffect(() => {
+    const formats = fileProcessingService.getSupportedFormats();
+    setSupportedFormats(formats);
+  }, []);
 
   // Real-time preview when text changes
   useEffect(() => {
@@ -137,6 +154,172 @@ const Anonymizer = () => {
     }
   };
 
+  // File upload handlers
+  const handleFileSelect = async (file) => {
+    setError(null);
+    setFileProcessing(true);
+    setUploadedFile(file);
+
+    try {
+      const result = await fileProcessingService.processFile(file);
+      const report = fileProcessingService.generateProcessingReport(result);
+      
+      setFileResult(report);
+
+      if (result.success && result.content) {
+        if (result.content.requiresServer) {
+          // Handle server-side processing
+          await handleServerSideProcessing(file, result);
+        } else {
+          // Client-side processing successful
+          let extractedText = '';
+          
+          if (typeof result.content === 'string') {
+            extractedText = result.content;
+          } else if (result.content.textContent) {
+            extractedText = result.content.textContent;
+          } else if (result.content.raw) {
+            extractedText = result.content.raw;
+          } else if (Array.isArray(result.content.parsed)) {
+            extractedText = result.content.parsed.map(row => 
+              Object.values(row).join(' ')
+            ).join('\n');
+          }
+
+          setText(extractedText);
+          setInputMode('file');
+          
+          // Perform analysis on extracted content
+          if (extractedText.trim()) {
+            await performAnalysis(extractedText, false);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('File processing error:', err);
+      setError(`File processing failed: ${err.message}`);
+      setFileResult(null);
+    } finally {
+      setFileProcessing(false);
+    }
+  };
+
+  const handleServerSideProcessing = async (file, clientResult) => {
+    try {
+      // Use the API service for server-side file processing
+      const response = await anonymizationService.processFile(file, {
+        sensitivity: sensitivity,
+        compliance_framework: complianceFramework,
+        anonymization_strategy: anonymizationStrategy,
+        anonymize: false // Just process and analyze, don't anonymize yet
+      });
+      
+      if (response.success) {
+        // Set extracted content
+        setText(response.content_preview || '[File content processed successfully]');
+        setInputMode('file');
+        
+        // Update file result with server response
+        setFileResult({
+          status: 'success',
+          fileInfo: response.file_info,
+          metadata: response.metadata,
+          sensitiveFindings: response.sensitive_findings,
+          recommendations: response.recommendations,
+          serverProcessing: {
+            status: 'completed',
+            message: 'File processed successfully on server',
+            requestId: response.request_id,
+            processingStats: response.processing_stats
+          }
+        });
+
+        // Store the request ID for later use
+        setUploadedFile({
+          ...file,
+          requestId: response.request_id,
+          serverProcessed: true
+        });
+
+      } else {
+        throw new Error(response.error || 'Server processing failed');
+      }
+      
+    } catch (err) {
+      console.error('Server processing error:', err);
+      throw new Error(`Server processing failed: ${err.message}`);
+    }
+  };
+
+  const handleFileDrop = (e) => {
+    e.preventDefault();
+    setDragActive(false);
+    
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      handleFileSelect(files[0]);
+    }
+  };
+
+  const handleFileDragOver = (e) => {
+    e.preventDefault();
+    setDragActive(true);
+  };
+
+  const handleFileDragLeave = (e) => {
+    e.preventDefault();
+    setDragActive(false);
+  };
+
+  const handleFileInputChange = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length > 0) {
+      handleFileSelect(files[0]);
+    }
+  };
+
+  const clearFile = () => {
+    setUploadedFile(null);
+    setFileResult(null);
+    setInputMode('text');
+    setText('');
+    setDetections([]);
+    setInsights(null);
+    setResult(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const downloadAnonymizedFile = async () => {
+    if (!result || !uploadedFile) return;
+
+    try {
+      if (uploadedFile.serverProcessed && uploadedFile.requestId) {
+        // Use server-side download for server-processed files
+        await anonymizationService.downloadAnonymizedFile(uploadedFile.requestId, 'txt');
+      } else {
+        // Client-side download for client-processed files
+        const anonymizedContent = result.anonymizedText;
+        const originalName = uploadedFile.name;
+        const extension = originalName.substring(originalName.lastIndexOf('.'));
+        const baseName = originalName.substring(0, originalName.lastIndexOf('.'));
+        
+        const blob = new Blob([anonymizedContent], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${baseName}_anonymized${extension}`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
+    } catch (error) {
+      setError(`Download failed: ${error.message}`);
+    }
+  };
+
   return (
     <Container className="py-4">
       <Card>
@@ -244,13 +427,183 @@ const Anonymizer = () => {
             <Tab.Content>
               {/* Input & Analysis Tab */}
               <Tab.Pane eventKey="input">
+                {/* Input Mode Selector */}
+                <Card className="mb-4">
+                  <Card.Body>
+                    <div className="d-flex justify-content-between align-items-center mb-3">
+                      <h5 className="mb-0">📄 Input Method</h5>
+                      <div>
+                        <Button 
+                          variant={inputMode === 'text' ? 'primary' : 'outline-primary'}
+                          size="sm"
+                          className="me-2"
+                          onClick={() => setInputMode('text')}
+                        >
+                          ✏️ Text Input
+                        </Button>
+                        <Button 
+                          variant={inputMode === 'file' ? 'primary' : 'outline-primary'}
+                          size="sm"
+                          onClick={() => setInputMode('file')}
+                        >
+                          📁 File Upload
+                        </Button>
+                      </div>
+                    </div>
+
+                    {inputMode === 'file' && (
+                      <div>
+                        {/* File Upload Area */}
+                        <div 
+                          className={`border-2 border-dashed rounded-3 p-4 text-center ${
+                            dragActive ? 'border-primary bg-light' : 'border-secondary'
+                          }`}
+                          onDrop={handleFileDrop}
+                          onDragOver={handleFileDragOver}
+                          onDragLeave={handleFileDragLeave}
+                          style={{ cursor: 'pointer', minHeight: '200px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
+                          onClick={() => fileInputRef.current?.click()}
+                        >
+                          {fileProcessing ? (
+                            <div>
+                              <div className="spinner-border text-primary mb-3" role="status">
+                                <span className="visually-hidden">Processing...</span>
+                              </div>
+                              <p className="text-muted">Processing file...</p>
+                            </div>
+                          ) : uploadedFile ? (
+                            <div>
+                              <div className="mb-3">
+                                <i className="bi bi-file-earmark-check text-success" style={{ fontSize: '3rem' }}></i>
+                              </div>
+                              <h5 className="text-success">{uploadedFile.name}</h5>
+                              <p className="text-muted">{fileProcessingService.formatFileSize(uploadedFile.size)}</p>
+                              <Button variant="outline-danger" size="sm" onClick={(e) => {e.stopPropagation(); clearFile();}}>
+                                Remove File
+                              </Button>
+                            </div>
+                          ) : (
+                            <div>
+                              <div className="mb-3">
+                                <i className="bi bi-cloud-upload text-primary" style={{ fontSize: '3rem' }}></i>
+                              </div>
+                              <h5>Drop files here or click to upload</h5>
+                              <p className="text-muted mb-3">
+                                Supports multiple formats including PDF, DOCX, TXT, CSV, JSON, XML, HTML, RTF
+                              </p>
+                              <Button variant="primary">
+                                Choose File
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          className="d-none"
+                          onChange={handleFileInputChange}
+                          accept={supportedFormats.map(f => f.extension).join(',')}
+                        />
+
+                        {/* Supported Formats Display */}
+                        <div className="mt-3">
+                          <h6>Supported File Formats:</h6>
+                          <div className="row">
+                            {supportedFormats.slice(0, 8).map((format, index) => (
+                              <div key={index} className="col-md-3 col-sm-4 col-6 mb-2">
+                                <Badge 
+                                  bg={format.requiresServer ? 'warning' : 'success'} 
+                                  className="w-100 d-block p-2"
+                                  title={`${format.description} - Max: ${fileProcessingService.formatFileSize(format.maxSize)}`}
+                                >
+                                  {format.extension.toUpperCase()}
+                                  {format.requiresServer && <small className="d-block">Server Required</small>}
+                                </Badge>
+                              </div>
+                            ))}
+                          </div>
+                          {supportedFormats.length > 8 && (
+                            <small className="text-muted">
+                              And {supportedFormats.length - 8} more formats...
+                            </small>
+                          )}
+                        </div>
+
+                        {/* File Processing Result */}
+                        {fileResult && (
+                          <Alert variant={fileResult.status === 'success' ? 'success' : 'danger'} className="mt-3">
+                            <div className="d-flex justify-content-between align-items-start">
+                              <div>
+                                <h6>
+                                  {fileResult.status === 'success' ? '✅ File Processed Successfully' : '❌ Processing Error'}
+                                </h6>
+                                {fileResult.status === 'success' ? (
+                                  <div>
+                                    <div className="mb-2">
+                                      <strong>File Info:</strong> {fileResult.metadata.fileName} 
+                                      ({fileResult.metadata.fileSize}, {fileResult.metadata.fileType})
+                                    </div>
+                                    {fileResult.sensitiveFindings && (
+                                      <div className="mb-2">
+                                        <strong>Sensitive Data Found:</strong>
+                                        <Badge bg="danger" className="ms-2">{fileResult.sensitiveFindings.total}</Badge>
+                                        {fileResult.sensitiveFindings.medical.length > 0 && (
+                                          <Badge bg="warning" className="ms-1">Medical: {fileResult.sensitiveFindings.medical.length}</Badge>
+                                        )}
+                                        {fileResult.sensitiveFindings.personal.length > 0 && (
+                                          <Badge bg="info" className="ms-1">Personal: {fileResult.sensitiveFindings.personal.length}</Badge>
+                                        )}
+                                        {fileResult.sensitiveFindings.financial.length > 0 && (
+                                          <Badge bg="danger" className="ms-1">Financial: {fileResult.sensitiveFindings.financial.length}</Badge>
+                                        )}
+                                      </div>
+                                    )}
+                                    {fileResult.serverProcessing && (
+                                      <div className="alert alert-info p-2 mb-2">
+                                        <strong>Server Processing:</strong> {fileResult.serverProcessing.message}
+                                      </div>
+                                    )}
+                                    {fileResult.recommendations && fileResult.recommendations.length > 0 && (
+                                      <div>
+                                        <strong>Recommendations:</strong>
+                                        <ul className="mb-0 mt-1">
+                                          {fileResult.recommendations.map((rec, index) => (
+                                            <li key={index}>
+                                              <Badge bg={rec.severity === 'critical' ? 'danger' : rec.severity === 'high' ? 'warning' : 'info'} className="me-2">
+                                                {rec.severity.toUpperCase()}
+                                              </Badge>
+                                              {rec.message}
+                                            </li>
+                                          ))}
+                                        </ul>
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <p className="mb-0">{fileResult.message}</p>
+                                )}
+                              </div>
+                            </div>
+                          </Alert>
+                        )}
+                      </div>
+                    )}
+                  </Card.Body>
+                </Card>
+
                 <Row>
                   <Col md={8}>
                     <Form.Group className="mb-3">
                       <Form.Label>
-                        <strong>Medical Report Text</strong>
+                        <strong>
+                          {inputMode === 'file' ? 'Extracted Content' : 'Medical Report Text'}
+                        </strong>
                         <small className="text-muted ms-2">
-                          Paste your medical report, lab results, or clinical notes
+                          {inputMode === 'file' 
+                            ? 'Content extracted from uploaded file' 
+                            : 'Paste your medical report, lab results, or clinical notes'
+                          }
                         </small>
                       </Form.Label>
                       <Form.Control 
@@ -366,6 +719,28 @@ const Anonymizer = () => {
                     >
                       🔍 Review Detections ({detections.length})
                     </Button>
+                  )}
+
+                  {inputMode === 'file' && uploadedFile && (
+                    <>
+                      <Button 
+                        variant="outline-info" 
+                        size="lg"
+                        onClick={clearFile}
+                      >
+                        🗑️ Clear File
+                      </Button>
+                      
+                      {result && (
+                        <Button 
+                          variant="success" 
+                          size="lg"
+                          onClick={downloadAnonymizedFile}
+                        >
+                          💾 Download Anonymized
+                        </Button>
+                      )}
+                    </>
                   )}
                 </div>
               </Tab.Pane>

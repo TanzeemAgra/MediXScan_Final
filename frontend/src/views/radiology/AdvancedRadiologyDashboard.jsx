@@ -25,10 +25,41 @@ const AdvancedRadiologyDashboard = () => {
   // Data hooks
   const { data: overview, loading: overviewLoading, error: overviewError, refetch: refetchOverview } = useDashboardOverview();
   const { data: radiologyStats, loading: statsLoading } = useDashboardStats();
-  const { data: recentExams, loading: examsLoading, refetch: refetchExams } = useRadiologyRecords({ 
+  const { data: radiologyData, loading: examsLoading, refetch: refetchExams } = useRadiologyRecords({ 
     limit: 10, 
     modality: selectedModality !== 'all' ? selectedModality : undefined 
   });
+
+  // Soft-coded data transformation: Convert radiology data structure to flat array
+  const recentExams = useMemo(() => {
+    if (!radiologyData) return [];
+    
+    // Handle different possible data structures with soft coding approach
+    if (Array.isArray(radiologyData)) {
+      // Direct array format
+      return radiologyData;
+    } else if (radiologyData.results && Array.isArray(radiologyData.results)) {
+      // Results array format from API
+      return radiologyData.results;
+    } else if (typeof radiologyData === 'object') {
+      // Combined format from our API: {xrayReports: [], ctScans: [], mriResults: [], ultrasounds: []}
+      const allExams = [];
+      
+      // Soft-coded property extraction
+      const examArrayProperties = ['xrayReports', 'ctScans', 'mriResults', 'ultrasounds', 'results'];
+      
+      examArrayProperties.forEach(prop => {
+        if (radiologyData[prop] && Array.isArray(radiologyData[prop])) {
+          allExams.push(...radiologyData[prop]);
+        }
+      });
+      
+      return allExams;
+    }
+    
+    // Fallback: empty array
+    return [];
+  }, [radiologyData]);
 
   // Equipment data state
   const [equipmentData, setEquipmentData] = useState([]);
@@ -86,29 +117,36 @@ const AdvancedRadiologyDashboard = () => {
     return getWidgetsByRole(role);
   }, [role]);
 
-  // Statistics calculations
+  // Statistics calculations - using soft coding approach with defensive programming
   const dashboardStats = useMemo(() => {
+    // Ensure recentExams is always an array for safe filtering
+    const examsArray = Array.isArray(recentExams) ? recentExams : [];
+    
     const base = {
-      totalExams: recentExams?.length || 0,
-      pendingReports: recentExams?.filter(exam => exam.status === 'pending')?.length || 0,
-      completedReports: recentExams?.filter(exam => exam.status === 'completed')?.length || 0,
-      criticalFindings: recentExams?.filter(exam => exam.priority === 'urgent')?.length || 0
+      totalExams: examsArray.length,
+      pendingReports: examsArray.filter(exam => exam?.status === 'Pending' || exam?.status === 'pending').length,
+      completedReports: examsArray.filter(exam => exam?.status === 'Completed' || exam?.status === 'completed').length,
+      criticalFindings: examsArray.filter(exam => exam?.priority === 'urgent' || exam?.priority === 'high').length
     };
 
     return base;
   }, [recentExams]);
 
-  // Workload distribution data
+  // Workload distribution data - using soft coding approach with defensive programming
   const workloadData = useMemo(() => {
+    // Ensure recentExams is always an array for safe iteration
+    const examsArray = Array.isArray(recentExams) ? recentExams : [];
     const modalityCount = {};
-    recentExams?.forEach(exam => {
-      const modality = exam.record_type || 'other';
+    
+    examsArray.forEach(exam => {
+      // Soft-coded modality detection with fallback
+      const modality = exam?.imaging_type || exam?.record_type || 'other';
       modalityCount[modality] = (modalityCount[modality] || 0) + 1;
     });
 
     return {
       series: Object.values(modalityCount),
-      labels: Object.keys(modalityCount).map(key => key.toUpperCase())
+      labels: Object.keys(modalityCount).map(key => key.charAt(0).toUpperCase() + key.slice(1))
     };
   }, [recentExams]);
 
@@ -323,7 +361,7 @@ const AdvancedRadiologyDashboard = () => {
           <div className="text-center py-4">
             <Spinner animation="border" variant="primary" />
           </div>
-        ) : recentExams && recentExams.length > 0 ? (
+        ) : (Array.isArray(recentExams) && recentExams.length > 0) ? (
           <div className="table-responsive">
             <table className="table table-hover">
               <thead>
@@ -338,7 +376,7 @@ const AdvancedRadiologyDashboard = () => {
                 </tr>
               </thead>
               <tbody>
-                {recentExams.map((exam, index) => (
+                {(Array.isArray(recentExams) ? recentExams : []).map((exam, index) => (
                   <tr key={exam.record_id || index}>
                     <td>
                       <code>{exam.record_id}</code>

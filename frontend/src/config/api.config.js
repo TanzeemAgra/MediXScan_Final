@@ -87,7 +87,9 @@ const apiConfig = {
         getInsights: '/api/v1/medical-records/anonymization/insights/',
         exportAnonymized: '/api/v1/medical-records/anonymization/export/{id}/',
         auditLog: '/api/v1/medical-records/anonymization/audit/',
-        config: '/api/v1/medical-records/anonymization/config/'
+        config: '/api/v1/medical-records/anonymization/config/',
+        processFile: '/api/v1/medical-records/anonymization/process-file/',
+        supportedFormats: '/api/v1/medical-records/anonymization/supported-formats/'
       }
     },
 

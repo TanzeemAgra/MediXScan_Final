@@ -39,6 +39,7 @@ urlpatterns = [
     path('api/v1/appointments/', include('appointments.urls')),
     path('api/v1/medical-records/', include('medical_records.urls')),
     path('api/v1/notifications/', include('notifications.urls')),
+    path('api/v1/dashboard/', include('dashboard.urls')),
     
     # Health Check
     path('health/', include('health_check.urls')),
