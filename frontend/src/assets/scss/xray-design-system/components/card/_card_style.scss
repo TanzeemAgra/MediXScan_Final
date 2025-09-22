@@ -35,7 +35,13 @@ $prefix: card-;
         backdrop-filter: blur(10px);
         border-bottom: unset;
     }
-    background-image: url(../../assets/images/glass-card.png);
+    // Soft-coded fallback system for glass card background
+    background-image: var(--glass-card-bg, 
+        linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05))),
+        var(--glass-card-pattern, 
+        radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(120, 119, 198, 0.2) 0%, transparent 50%),
+        radial-gradient(circle at 40% 80%, rgba(120, 119, 198, 0.1) 0%, transparent 50%));
     background-attachment: fixed;
-    background-size: cover;
+    background-size: cover, 400px 400px, 300px 300px, 200px 200px;
 }

@@ -1,0 +1,73 @@
+/**
+ * Build-time CSS overrides for production environments
+ * This file provides fallbacks for missing assets using soft coding techniques
+ */
+
+/* Production build fallbacks */
+@media screen {
+  /* Override any background-image references that might fail */
+  .glass-card,
+  .card-glass,
+  [class*="glass-card"] {
+    /* Soft-coded fallback: Use CSS gradients instead of missing images */
+    background-image: var(--glass-card-bg) !important;
+    background-size: cover;
+    background-attachment: scroll; /* Change from fixed to scroll for better performance */
+    background-repeat: no-repeat;
+  }
+  
+  /* Enhanced glass effect without external images */
+  .glass-card::before,
+  .card-glass::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--glass-card-pattern);
+    opacity: var(--glass-card-opacity, 0.1);
+    pointer-events: none;
+    z-index: 0;
+  }
+  
+  /* Ensure content is above the pseudo-element */
+  .glass-card > *,
+  .card-glass > * {
+    position: relative;
+    z-index: 1;
+  }
+}
+
+/* Vercel/Netlify build environment specific overrides */
+@supports (backdrop-filter: blur(10px)) {
+  .glass-card,
+  .card-glass {
+    backdrop-filter: var(--glass-card-blur, blur(10px));
+    -webkit-backdrop-filter: var(--glass-card-blur, blur(10px));
+  }
+}
+
+/* Fallback for browsers that don't support backdrop-filter */
+@supports not (backdrop-filter: blur(10px)) {
+  .glass-card,
+  .card-glass {
+    background-color: rgba(255, 255, 255, 0.8);
+    background-image: var(--glass-card-bg);
+  }
+  
+  /* Dark theme fallback */
+  [data-theme="dark"] .glass-card,
+  [data-theme="dark"] .card-glass {
+    background-color: rgba(0, 0, 0, 0.6);
+  }
+}
+
+/* Mobile-specific optimizations */
+@media (max-width: 768px) {
+  .glass-card,
+  .card-glass {
+    background-attachment: scroll; /* Better performance on mobile */
+    backdrop-filter: var(--glass-card-mobile-blur, blur(5px));
+  }
+}

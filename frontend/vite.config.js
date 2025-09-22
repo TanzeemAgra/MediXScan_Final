@@ -17,6 +17,19 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: "build",
       minify: true,
+      // Soft-coded asset handling - ignore missing assets in production
+      rollupOptions: {
+        onwarn(warning, warn) {
+          // Ignore missing asset warnings for glass-card.png and other optional assets
+          if (warning.code === 'UNRESOLVED_IMPORT' && warning.id?.includes('glass-card.png')) {
+            return;
+          }
+          if (warning.message?.includes("didn't resolve at build time")) {
+            return;
+          }
+          warn(warning);
+        }
+      }
     },
     define: {
       // Define process.env for browser compatibility

@@ -1,0 +1,47 @@
+<!-- 
+SVG placeholder for missing glass-card.png
+This is a soft-coded solution that generates the glass card effect using SVG
+-->
+<svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Gradient definitions for glass effect -->
+    <linearGradient id="glassGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:rgba(255,255,255,0.1);stop-opacity:1" />
+      <stop offset="50%" style="stop-color:rgba(255,255,255,0.05);stop-opacity:1" />
+      <stop offset="100%" style="stop-color:rgba(255,255,255,0.02);stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Pattern for additional texture -->
+    <radialGradient id="pattern1" cx="20%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:rgba(120,119,198,0.3);stop-opacity:1" />
+      <stop offset="100%" style="stop-color:rgba(120,119,198,0);stop-opacity:0" />
+    </radialGradient>
+    
+    <radialGradient id="pattern2" cx="80%" cy="20%" r="40%">
+      <stop offset="0%" style="stop-color:rgba(120,119,198,0.2);stop-opacity:1" />
+      <stop offset="100%" style="stop-color:rgba(120,119,198,0);stop-opacity:0" />
+    </radialGradient>
+    
+    <radialGradient id="pattern3" cx="40%" cy="80%" r="30%">
+      <stop offset="0%" style="stop-color:rgba(120,119,198,0.1);stop-opacity:1" />
+      <stop offset="100%" style="stop-color:rgba(120,119,198,0);stop-opacity:0" />
+    </radialGradient>
+    
+    <!-- Noise filter for texture -->
+    <filter id="noise">
+      <feTurbulence baseFrequency="0.9" numOctaves="4" stitchTiles="stitch"/>
+      <feComposite in="SourceGraphic" operator="multiply"/>
+    </filter>
+  </defs>
+  
+  <!-- Base glass effect -->
+  <rect width="100%" height="100%" fill="url(#glassGradient)" />
+  
+  <!-- Overlaid patterns -->
+  <rect width="100%" height="100%" fill="url(#pattern1)" />
+  <rect width="100%" height="100%" fill="url(#pattern2)" />
+  <rect width="100%" height="100%" fill="url(#pattern3)" />
+  
+  <!-- Subtle texture -->
+  <rect width="100%" height="100%" fill="rgba(255,255,255,0.01)" filter="url(#noise)" />
+</svg>

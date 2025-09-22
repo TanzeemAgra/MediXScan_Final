@@ -1,0 +1,79 @@
+/**
+ * Soft-coded CSS Variables for Theme Configuration
+ * This file provides a centralized configuration system for customizable UI elements
+ */
+
+:root {
+  /* Glass Card Background System - Soft Coding */
+  /* Primary glass effect - fallback gradient */
+  --glass-card-bg: linear-gradient(
+    135deg, 
+    rgba(255, 255, 255, 0.1) 0%, 
+    rgba(255, 255, 255, 0.05) 100%
+  );
+  
+  /* Secondary pattern - animated gradient effects */
+  --glass-card-pattern: 
+    radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(120, 119, 198, 0.2) 0%, transparent 50%),
+    radial-gradient(circle at 40% 80%, rgba(120, 119, 198, 0.1) 0%, transparent 50%);
+    
+  /* Alternative glass patterns for different themes */
+  --glass-card-pattern-dark: 
+    radial-gradient(circle at 30% 40%, rgba(66, 165, 245, 0.2) 0%, transparent 50%),
+    radial-gradient(circle at 70% 30%, rgba(156, 39, 176, 0.15) 0%, transparent 50%);
+    
+  --glass-card-pattern-medical:
+    radial-gradient(circle at 25% 25%, rgba(76, 175, 80, 0.2) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, rgba(33, 150, 243, 0.15) 0%, transparent 50%);
+    
+  /* Glass card opacity levels - configurable */
+  --glass-card-opacity: 0.1;
+  --glass-card-border-opacity: 0.2;
+  --glass-card-blur: blur(10px);
+  
+  /* Fallback colors for missing assets */
+  --fallback-primary: #4f46e5;
+  --fallback-secondary: #7c3aed;
+  --fallback-accent: #06b6d4;
+  
+  /* Image fallback system */
+  --default-card-bg: var(--glass-card-bg);
+  --default-pattern: var(--glass-card-pattern);
+  
+  /* Environment-based configuration */
+  --build-mode: 'production'; /* Can be overridden by build process */
+  --asset-path: '/assets/images/'; /* Configurable asset path */
+  
+  /* Responsive glass effects */
+  --glass-card-mobile-blur: blur(5px);
+  --glass-card-desktop-blur: blur(15px);
+}
+
+/* Dark theme overrides */
+[data-theme="dark"] {
+  --glass-card-bg: linear-gradient(
+    135deg, 
+    rgba(255, 255, 255, 0.05) 0%, 
+    rgba(255, 255, 255, 0.02) 100%
+  );
+  --glass-card-pattern: var(--glass-card-pattern-dark);
+}
+
+/* Medical theme overrides */
+[data-theme="medical"] {
+  --glass-card-pattern: var(--glass-card-pattern-medical);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  :root {
+    --glass-card-blur: var(--glass-card-mobile-blur);
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --glass-card-blur: var(--glass-card-desktop-blur);
+  }
+}

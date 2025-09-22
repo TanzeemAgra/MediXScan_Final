@@ -15,6 +15,9 @@
 // Configuration
 @import "./bootstrap/functions";
 
+// Soft-coded theme variables (must be imported first)
+@import "./theme-variables";
+
 // Xray Design system
 @import "./medixscan-design-system/variables";
 @import "./medixscan-design-system/variables-dark";
@@ -77,3 +80,6 @@
 
 // Enhanced Error Highlighting for Medical Reports
 @import "./error-highlighting";
+
+// Build-time fallbacks for production environments
+@import "./build-fallbacks";

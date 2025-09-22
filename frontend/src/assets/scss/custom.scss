@@ -10,6 +10,9 @@
 // Configuration
 @import "./bootstrap/functions";
 
+// Soft-coded theme variables (must be imported first)
+@import "./theme-variables";
+
 // Xray Design system
 @import "./xray-design-system/variables";
 @import "./xray-design-system/variables-dark";
@@ -40,6 +43,9 @@
 
 // Customizer
 @import "./custom/customizer/layouts";
+
+// Build-time fallbacks for production environments
+@import "./build-fallbacks";
 
 
 
