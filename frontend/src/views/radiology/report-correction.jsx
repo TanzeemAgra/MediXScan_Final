@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Container, Card, Form, Button, Alert, Modal, Tab, Nav } from 'react-bootstrap';
 import correctionService from '../../services/correction.service';
 import { useURLManager, parseQueryParams } from '../../utils/url.utils';
+import EnhancedErrorDisplay from '../../components/EnhancedErrorDisplay';
+import errorHighlightingService from '../../services/error-highlighting.service';
 // Connection components temporarily removed
 
 const ReportCorrection = () => {
@@ -114,14 +116,10 @@ const ReportCorrection = () => {
   // Simple client-side correction stub: minor grammar fixes and punctuation normalization
   const localCorrection = (inputText) => {
     if (!inputText) return '';
-    let out = inputText.trim();
-    // Fix common double spaces and ensure period at end
-    out = out.replace(/\s{2,}/g, ' ');
-    if (!/[.?!]$/.test(out)) out = out + '.';
-    // Simple replacements: 'pt' -> 'patient', 'pleural effusion' annotation
-    out = out.replace(/\bpt\b/gi, 'patient');
-    out = out.replace(/pleural effusion/gi, 'pleural effusion (small)');
-    return out;
+    
+    // Use the enhanced error detection service for better corrections
+    const analysis = errorHighlightingService.analyzeText(inputText);
+    return analysis.correctedText;
   };
 
   const handleShareReport = async () => {
@@ -207,70 +205,26 @@ const ReportCorrection = () => {
             </div>
           )}
 
-          <Modal show={showModal} onHide={() => setShowModal(false)} size="lg">
+          <Modal show={showModal} onHide={() => setShowModal(false)} size="xl">
             <Modal.Header closeButton>
-              <Modal.Title>Correction Result</Modal.Title>
+              <Modal.Title>📋 Enhanced Report Analysis & Correction</Modal.Title>
             </Modal.Header>
-            <Modal.Body>
-              <Tab.Container defaultActiveKey="highlighted">
-                <Nav variant="tabs">
-                  <Nav.Item>
-                    <Nav.Link eventKey="highlighted">Highlighted Error</Nav.Link>
-                  </Nav.Item>
-                  <Nav.Item>
-                    <Nav.Link eventKey="corrected">Corrected Report</Nav.Link>
-                  </Nav.Item>
-                </Nav>
-
-                <Tab.Content className="mt-3">
-                  <Tab.Pane eventKey="highlighted">
-                    <h6>Highlights / Suggested edits</h6>
-                    {/* Confidence summary */}
-                    {result && result.versions && result.versions[0] && (
-                      <div className="mb-2">
-                        <strong>Confidence:</strong>
-                        <div className="progress" style={{ height: '12px' }}>
-                          <div className="progress-bar" role="progressbar" style={{ width: `${(result.versions[0].confidence_score || 0) * 100}%` }} aria-valuenow={(result.versions[0].confidence_score || 0) * 100} aria-valuemin="0" aria-valuemax="100">
-                            {Math.round((result.versions[0].confidence_score || 0) * 100)}%
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Categorized corrections */}
-                    <div className="mb-3">
-                      <strong>Detected issues:</strong>
-                      <ul>
-                        {result && result.versions && result.versions[0] && result.versions[0].corrections && (
-                          Object.keys(result.versions[0].corrections).map((k) => {
-                            const correction = result.versions[0].corrections[k];
-                            let displayText = '';
-                            if (Array.isArray(correction.explain)) {
-                              displayText = correction.explain.join('; ');
-                            } else if (correction.explain) {
-                              displayText = String(correction.explain);
-                            } else {
-                              displayText = JSON.stringify(correction);
-                            }
-                            return (
-                              <li key={k}><strong>{k}</strong>: {displayText}</li>
-                            );
-                          })
-                        )}
-                      </ul>
-                    </div>
-
-                    <pre style={{ whiteSpace: 'pre-wrap' }}>{highlighted}</pre>
-                  </Tab.Pane>
-                  <Tab.Pane eventKey="corrected">
-                    <h6>Corrected Report</h6>
-                    <pre style={{ whiteSpace: 'pre-wrap' }}>{(result && result.versions && result.versions[0] && result.versions[0].findings) || text}</pre>
-                  </Tab.Pane>
-                </Tab.Content>
-              </Tab.Container>
+            <Modal.Body style={{ maxHeight: '80vh', overflowY: 'auto' }}>
+              <EnhancedErrorDisplay 
+                originalText={text}
+                result={result}
+                onClose={() => setShowModal(false)}
+              />
             </Modal.Body>
             <Modal.Footer>
-              <Button variant="primary" onClick={() => setShowModal(false)}>Close</Button>
+              <div className="d-flex justify-content-between align-items-center w-100">
+                <div className="text-muted">
+                  <small>💡 Tip: Use the tabs above to explore different views of your corrections</small>
+                </div>
+                <Button variant="primary" onClick={() => setShowModal(false)}>
+                  ✅ Close Analysis
+                </Button>
+              </div>
             </Modal.Footer>
           </Modal>
         </Card.Body>
