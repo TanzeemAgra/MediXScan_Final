@@ -110,10 +110,43 @@ class ApiService {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        throw { response: { status: response.status, data: await response.json() } };
+        // Soft-coded error handling: Try to parse JSON, fallback to text for HTML responses
+        let errorData;
+        const contentType = response.headers.get('content-type');
+        
+        try {
+          if (contentType && contentType.includes('application/json')) {
+            errorData = await response.json();
+          } else {
+            // Handle HTML error pages or plain text responses
+            const textResponse = await response.text();
+            errorData = {
+              message: `Server returned ${response.status}`,
+              detail: textResponse.includes('<!DOCTYPE') 
+                ? `Server returned HTML instead of JSON. Check if the endpoint exists.`
+                : textResponse
+            };
+          }
+        } catch (parseError) {
+          // Fallback if parsing fails
+          errorData = {
+            message: `Server error ${response.status}`,
+            detail: 'Unable to parse error response'
+          };
+        }
+        
+        throw { response: { status: response.status, data: errorData } };
       }
 
-      return await response.json();
+      // Soft-coded response handling: Check content type before parsing
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        return await response.json();
+      } else {
+        // Handle non-JSON responses
+        const textResponse = await response.text();
+        throw new Error(`Expected JSON response but received ${contentType || 'unknown content type'}: ${textResponse.substring(0, 100)}...`);
+      }
     } catch (error) {
       if (attempt < this.retryAttempts && 
           (error.name === 'AbortError' || error.type === 'network')) {

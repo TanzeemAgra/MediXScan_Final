@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Container, Card, Form, Button, Alert, Modal, Tab, Nav } from 'react-bootstrap';
 import correctionService from '../../services/correction.service';
+import { useURLManager, parseQueryParams } from '../../utils/url.utils';
+// Connection components temporarily removed
 
 const ReportCorrection = () => {
   const [recordId, setRecordId] = useState('');
@@ -10,6 +12,20 @@ const ReportCorrection = () => {
   const [submitting, setSubmitting] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [highlighted, setHighlighted] = useState('');
+  
+  // URL management for soft-coded URLs
+  const urlManager = useURLManager();
+  
+  // Parse URL parameters on mount (useful for pre-filling forms from external links)
+  React.useEffect(() => {
+    const urlParams = parseQueryParams();
+    if (urlParams.recordId) {
+      setRecordId(urlParams.recordId);
+    }
+    if (urlParams.prefillText) {
+      setText(decodeURIComponent(urlParams.prefillText));
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -108,13 +124,46 @@ const ReportCorrection = () => {
     return out;
   };
 
+  const handleShareReport = async () => {
+    try {
+      // Build a shareable URL with current parameters
+      const params = {};
+      if (recordId) params.recordId = recordId;
+      if (text) params.prefillText = encodeURIComponent(text);
+      
+      const shareableUrl = urlManager.urls.reportCorrection(params);
+      const success = await urlManager.shareURL(
+        shareableUrl, 
+        'MediXScan Report Correction', 
+        'Check out this radiology report correction system'
+      );
+      
+      if (!success) {
+        // Fallback: show URL in modal or alert
+        alert(`Share URL: ${shareableUrl}`);
+      }
+    } catch (err) {
+      console.error('Failed to share:', err);
+      // Fallback to current page URL
+      const currentUrl = urlManager.getCurrentBaseURL() + '/radiology/report-correction';
+      alert(`Share URL: ${currentUrl}`);
+    }
+  };
+
   return (
     <Container className="py-4">
-      <Card>
-        <Card.Header>
-          <h4>Report Correction</h4>
-          <p className="text-muted">Submit an imaging report for grammar and medical term correction.</p>
-        </Card.Header>
+        {/* Connection Status Display - Temporarily disabled */}
+        
+        <Card>
+          <Card.Header>
+            <div className="d-flex justify-content-between align-items-center">
+              <div>
+                <h4>Report Correction</h4>
+                <p className="text-muted mb-0">Submit an imaging report for grammar and medical term correction.</p>
+              </div>
+              {/* Connection Status temporarily disabled */}
+            </div>
+          </Card.Header>
         <Card.Body>
           {error && <Alert variant="danger">{error}</Alert>}
 
@@ -129,9 +178,25 @@ const ReportCorrection = () => {
               <Form.Control as="textarea" rows={10} value={text} onChange={(e) => setText(e.target.value)} required />
             </Form.Group>
 
-            <Button type="submit" variant="primary" disabled={submitting}>
-              {submitting ? 'Submitting...' : 'Submit for Correction'}
-            </Button>
+            <div className="d-flex gap-2">
+              <Button type="submit" variant="primary" disabled={submitting}>
+                {submitting ? 'Submitting...' : 'Submit for Correction'}
+              </Button>
+              <Button 
+                variant="outline-secondary" 
+                disabled={submitting} 
+                onClick={handleAnalyzeOnly}
+              >
+                {submitting ? 'Analyzing...' : 'Analyze Only'}
+              </Button>
+              <Button 
+                variant="outline-info" 
+                onClick={() => handleShareReport()}
+                title="Share this report correction page"
+              >
+                Share
+              </Button>
+            </div>
           </Form>
 
           {result && (
@@ -177,9 +242,20 @@ const ReportCorrection = () => {
                       <strong>Detected issues:</strong>
                       <ul>
                         {result && result.versions && result.versions[0] && result.versions[0].corrections && (
-                          Object.keys(result.versions[0].corrections).map((k) => (
-                            <li key={k}><strong>{k}</strong>: {Array.isArray(result.versions[0].corrections[k].explain) ? result.versions[0].corrections[k].explain.join('; ') : JSON.stringify(result.versions[0].corrections[k])}</li>
-                          ))
+                          Object.keys(result.versions[0].corrections).map((k) => {
+                            const correction = result.versions[0].corrections[k];
+                            let displayText = '';
+                            if (Array.isArray(correction.explain)) {
+                              displayText = correction.explain.join('; ');
+                            } else if (correction.explain) {
+                              displayText = String(correction.explain);
+                            } else {
+                              displayText = JSON.stringify(correction);
+                            }
+                            return (
+                              <li key={k}><strong>{k}</strong>: {displayText}</li>
+                            );
+                          })
                         )}
                       </ul>
                     </div>

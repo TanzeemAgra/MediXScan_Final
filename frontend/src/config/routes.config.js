@@ -1,5 +1,6 @@
 // Routes Configuration for MediXScan
 // Centralized route definitions with soft coding approach
+import environmentConfig from './environment.config';
 
 const routesConfig = {
   // Authentication Routes
@@ -197,6 +198,59 @@ export const getAllRoutes = () => {
   
   extractRoutes(routesConfig);
   return [...new Set(routes)]; // Remove duplicates
+};
+
+// Helper functions for building full URLs
+export const buildFullURL = (route) => {
+  return environmentConfig.buildFrontendUrl(route);
+};
+
+// Helper function to get full URL for report correction with optional parameters
+export const getReportCorrectionURL = (params = {}) => {
+  return environmentConfig.urlHelpers.buildReportCorrectionUrl(params);
+};
+
+// Helper function to get shareable URLs for different routes
+export const getShareableURL = (routeKey, section = null, params = {}) => {
+  let route = null;
+  
+  // Navigate through the routes config to find the route
+  const keys = routeKey.split('.');
+  let current = routesConfig;
+  
+  for (const key of keys) {
+    if (current && current[key]) {
+      current = current[key];
+    } else {
+      return null;
+    }
+  }
+  
+  route = current;
+  
+  if (typeof route === 'string') {
+    return environmentConfig.urlHelpers.buildShareableUrl(route, params);
+  }
+  
+  return null;
+};
+
+// Export specific URL builders for commonly used routes
+export const urlBuilders = {
+  // Radiology URLs
+  reportCorrection: (params) => getReportCorrectionURL(params),
+  radiologyDashboard: (params) => buildFullURL(routesConfig.radiology.dashboard) + (params ? `?${new URLSearchParams(params)}` : ''),
+  anonymizer: (params) => buildFullURL(routesConfig.radiology.anonymizer) + (params ? `?${new URLSearchParams(params)}` : ''),
+  
+  // Auth URLs  
+  signIn: (redirectTo) => buildFullURL(routesConfig.auth.signIn) + (redirectTo ? `?redirect=${encodeURIComponent(redirectTo)}` : ''),
+  signUp: (redirectTo) => buildFullURL(routesConfig.auth.signUp) + (redirectTo ? `?redirect=${encodeURIComponent(redirectTo)}` : ''),
+  
+  // Dashboard URLs
+  dashboard: (params) => buildFullURL(routesConfig.dashboard.home) + (params ? `?${new URLSearchParams(params)}` : ''),
+  
+  // Generic route builder
+  build: (routeKey, params = {}) => getShareableURL(routeKey, null, params)
 };
 
 export default routesConfig;

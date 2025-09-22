@@ -1,11 +1,13 @@
 // API Configuration for MediXScan Frontend
+import environmentConfig from './environment.config';
+
 const apiConfig = {
-  // Backend API Settings
+  // Backend API Settings - using environment config for soft coding
   backend: {
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000',
+    baseURL: environmentConfig.buildApiUrl() || 'http://localhost:8000',
     version: 'v1',
-    timeout: 10000,
-    retryAttempts: 3,
+    timeout: parseInt(import.meta.env.VITE_API_TIMEOUT) || 10000,
+    retryAttempts: parseInt(import.meta.env.VITE_API_RETRY_ATTEMPTS) || 3,
     retryDelay: 1000
   },
 
@@ -68,7 +70,15 @@ const apiConfig = {
       byPatient: '/api/v1/medical-records/patient/{patientId}/',
       radiology: '/api/v1/medical-records/radiology/',
       radiologyTypes: '/api/v1/medical-records/radiology/types/',
-      statistics: '/api/v1/medical-records/statistics/'
+      statistics: '/api/v1/medical-records/statistics/',
+      // Report Correction endpoints
+      corrections: {
+        submit: '/api/v1/medical-records/corrections/submit/',
+        analyze: '/api/v1/medical-records/corrections/analyze/',
+        request: '/api/v1/medical-records/corrections/{id}/',
+        accept: '/api/v1/medical-records/corrections/{id}/accept/',
+        list: '/api/v1/medical-records/corrections/'
+      }
     },
 
     // Dashboard endpoints

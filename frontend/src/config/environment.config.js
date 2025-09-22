@@ -64,32 +64,89 @@ export const process = {
 export const environmentConfig = {
   development: {
     apiUrl: 'http://localhost:8000',
+    frontendUrl: viteEnv.VITE_FRONTEND_URL || 'http://localhost:5173',
     debugEnabled: true,
     logLevel: 'debug',
     enableDevTools: true,
     enableRoleSwitcher: true,
     hotReload: true,
-    strictMode: false
+    strictMode: false,
+    // Dynamic port detection settings
+    portDetection: {
+      enabled: true,
+      defaultPorts: [5173, 5174, 5175, 3000, 3001],
+      timeout: 3000,
+      fallbackURL: 'http://localhost:5173'
+    },
+    // URL configurations for different features with dynamic port support
+    urls: {
+      reportCorrection: `${viteEnv.VITE_FRONTEND_URL || 'http://localhost:5173'}/radiology/report-correction`,
+      radiologyDashboard: `${viteEnv.VITE_FRONTEND_URL || 'http://localhost:5173'}/radiology/dashboard`,
+      anonymizer: `${viteEnv.VITE_FRONTEND_URL || 'http://localhost:5173'}/radiology/anonymizer`
+    }
   },
   
   production: {
     apiUrl: viteEnv.VITE_API_URL || 'https://api.medixscan.com',
+    frontendUrl: viteEnv.VITE_FRONTEND_URL || 'https://medixscan.vercel.app',
     debugEnabled: false,
     logLevel: 'error',
     enableDevTools: false,
     enableRoleSwitcher: false,
     hotReload: false,
-    strictMode: true
+    strictMode: true,
+    // No port detection in production
+    portDetection: {
+      enabled: false,
+      fallbackURL: viteEnv.VITE_FRONTEND_URL || 'https://medixscan.vercel.app'
+    },
+    // URL configurations for different features
+    urls: {
+      reportCorrection: `${viteEnv.VITE_FRONTEND_URL || 'https://medixscan.vercel.app'}/radiology/report-correction`,
+      radiologyDashboard: `${viteEnv.VITE_FRONTEND_URL || 'https://medixscan.vercel.app'}/radiology/dashboard`,
+      anonymizer: `${viteEnv.VITE_FRONTEND_URL || 'https://medixscan.vercel.app'}/radiology/anonymizer`
+    }
+  },
+  
+  staging: {
+    apiUrl: viteEnv.VITE_STAGING_API_URL || 'https://staging-api.medixscan.com',
+    frontendUrl: viteEnv.VITE_STAGING_FRONTEND_URL || 'https://staging.medixscan.vercel.app',
+    debugEnabled: true,
+    logLevel: 'info',
+    enableDevTools: true,
+    enableRoleSwitcher: true,
+    hotReload: false,
+    strictMode: false,
+    // Limited port detection for staging
+    portDetection: {
+      enabled: true,
+      defaultPorts: [5173, 3000],
+      timeout: 5000,
+      fallbackURL: viteEnv.VITE_STAGING_FRONTEND_URL || 'https://staging.medixscan.vercel.app'
+    },
+    // URL configurations for different features
+    urls: {
+      reportCorrection: `${viteEnv.VITE_STAGING_FRONTEND_URL || 'https://staging.medixscan.vercel.app'}/radiology/report-correction`,
+      radiologyDashboard: `${viteEnv.VITE_STAGING_FRONTEND_URL || 'https://staging.medixscan.vercel.app'}/radiology/dashboard`,
+      anonymizer: `${viteEnv.VITE_STAGING_FRONTEND_URL || 'https://staging.medixscan.vercel.app'}/radiology/anonymizer`
+    }
   },
   
   test: {
     apiUrl: 'http://localhost:8001',
+    frontendUrl: 'http://localhost:5173',
     debugEnabled: true,
     logLevel: 'warn',
     enableDevTools: true,
     enableRoleSwitcher: true,
     hotReload: false,
-    strictMode: true
+    strictMode: true,
+    // URL configurations for different features
+    urls: {
+      reportCorrection: 'http://localhost:5173/radiology/report-correction',
+      radiologyDashboard: 'http://localhost:5173/radiology/dashboard',
+      anonymizer: 'http://localhost:5173/radiology/anonymizer'
+    }
   }
 };
 
@@ -149,6 +206,49 @@ export const buildApiUrl = (endpoint = '') => {
   return cleanEndpoint ? `${baseUrl}/${cleanEndpoint}` : baseUrl;
 };
 
+// Frontend URL builder
+export const buildFrontendUrl = (path = '') => {
+  const config = getCurrentEnvironmentConfig();
+  const baseUrl = config.frontendUrl.replace(/\/$/, ''); // Remove trailing slash
+  const cleanPath = path.replace(/^\//, ''); // Remove leading slash
+  
+  return cleanPath ? `${baseUrl}/${cleanPath}` : baseUrl;
+};
+
+// Get specific feature URLs
+export const getFeatureUrl = (featureName) => {
+  const config = getCurrentEnvironmentConfig();
+  return config.urls[featureName] || null;
+};
+
+// URL helpers for different features
+export const urlHelpers = {
+  // Report correction system URLs
+  reportCorrection: () => getFeatureUrl('reportCorrection'),
+  radiologyDashboard: () => getFeatureUrl('radiologyDashboard'),
+  anonymizer: () => getFeatureUrl('anonymizer'),
+  
+  // Dynamic URL builders
+  buildReportCorrectionUrl: (params = {}) => {
+    const baseUrl = getFeatureUrl('reportCorrection');
+    if (params && Object.keys(params).length > 0) {
+      const searchParams = new URLSearchParams(params);
+      return `${baseUrl}?${searchParams.toString()}`;
+    }
+    return baseUrl;
+  },
+  
+  // Build full page URLs for sharing/redirects
+  buildShareableUrl: (path, params = {}) => {
+    const fullUrl = buildFrontendUrl(path);
+    if (params && Object.keys(params).length > 0) {
+      const searchParams = new URLSearchParams(params);
+      return `${fullUrl}?${searchParams.toString()}`;
+    }
+    return fullUrl;
+  }
+};
+
 // Debug logging with environment awareness
 export const envLog = (level, message, data = null) => {
   const config = getCurrentEnvironmentConfig();
@@ -202,6 +302,9 @@ export default {
   isFeatureEnabled,
   getEnvVar,
   buildApiUrl,
+  buildFrontendUrl,
+  getFeatureUrl,
+  urlHelpers,
   envLog,
   getEnvironmentInfo,
   validateEnvironment
