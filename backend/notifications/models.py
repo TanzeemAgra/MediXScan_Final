@@ -50,7 +50,7 @@ class Notification(models.Model):
     
     # Related objects (generic relation or specific FK)
     related_appointment = models.ForeignKey('appointments.Appointment', on_delete=models.CASCADE, null=True, blank=True)
-    related_prescription = models.ForeignKey('medical_records.Prescription', on_delete=models.CASCADE, null=True, blank=True)
+    # related_prescription = models.ForeignKey('medical_records.Prescription', on_delete=models.CASCADE, null=True, blank=True)  # TODO: Create Prescription model
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -1,5 +1,6 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
+from django.conf import settings
 from django.utils import timezone
 
 
@@ -11,7 +12,7 @@ class MedicalRecord(models.Model):
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
 
     def __str__(self):
         return f"{self.patient_name} - {self.record_id}"
@@ -36,7 +37,7 @@ class ReportCorrectionRequest(models.Model):
     corrected_text = models.TextField(blank=True)
     notes = models.TextField(blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    requested_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    requested_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -53,7 +54,7 @@ class ReportCorrectionVersion(models.Model):
     version_number = models.IntegerField(default=1)
     corrected_text = models.TextField()
     correction_notes = models.TextField(blank=True)
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -78,7 +79,7 @@ class AnonymizationRequest(models.Model):
     file_path = models.CharField(max_length=500, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     anonymization_level = models.CharField(max_length=50, default='standard')
-    requested_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    requested_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -94,7 +95,7 @@ class AnonymizationAuditLog(models.Model):
     request = models.ForeignKey(AnonymizationRequest, on_delete=models.CASCADE, related_name='audit_logs')
     action = models.CharField(max_length=100)
     details = models.TextField()
-    performed_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    performed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -109,7 +110,7 @@ class AnonymizationConfiguration(models.Model):
     name = models.CharField(max_length=100, unique=True)
     settings = models.JSONField(default=dict)
     is_active = models.BooleanField(default=True)
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
