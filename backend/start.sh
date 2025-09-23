@@ -3,6 +3,10 @@
 
 echo "🚀 Starting MediXScan Backend Deployment..."
 
+# Create any missing migrations
+echo "📝 Creating missing migrations..."
+python manage.py makemigrations --noinput
+
 # Apply database migrations
 echo "📦 Applying database migrations..."
 python manage.py migrate --noinput
