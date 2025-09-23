@@ -29,6 +29,7 @@ Pillow==10.0.0
 python-decouple==3.8
 django-extensions==3.2.3
 django-filter==23.2
+django-import-export==3.2.0
 requests==2.31.0
 
 # Monitoring & Health
