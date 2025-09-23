@@ -1,4 +1,4 @@
-# MedixScan Backend - Minimal Production Dependencies
+# MedixScan Backend Dependencies
 
 # Core Django
 Django==4.2.15
@@ -17,23 +17,47 @@ cryptography==41.0.4
 # API Documentation
 drf-yasg==1.21.7
 
-# Basic File Handling
+# File Handling & Media
 python-docx==1.2.0
 PyPDF2==3.0.1
+pdfplumber==0.11.7
 openpyxl==3.1.2
+xlrd==2.0.1
 python-magic==0.4.27
 chardet==5.2.0
+beautifulsoup4==4.12.2
+lxml==4.9.3
 Pillow==10.0.0
+django-storages==1.13.2
+boto3==1.28.57
+# Additional file processing dependencies
+pdfminer.six==20250506
+pypdfium2==4.30.0
 
 # Utilities
 python-decouple==3.8
 django-extensions==3.2.3
 django-filter==23.2
+django-import-export==3.2.0
 requests==2.31.0
 
-# Monitoring & Health
+# Async & Background Tasks
+celery==5.3.1
+redis==4.6.0
+django-celery-beat==2.5.0
+
+# Monitoring & Logging
 sentry-sdk==1.32.0
 django-health-check==3.17.0
+
+# Development
+django-debug-toolbar==4.2.0
+factory-boy==3.3.0
+pytest-django==4.5.2
+
+# Small Hugging Face PoC model support (CPU)
+transformers==4.34.0
+torch==2.2.0
 
 # Production
 gunicorn==21.2.0
