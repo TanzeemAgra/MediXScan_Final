@@ -26,6 +26,7 @@ class MedicalAIService:
                 "messages": messages,
                 "max_tokens": max_tokens,
                 "temperature": temperature,
+                "timeout": 20.0,  # 20 second timeout for OpenAI API
             }
             if response_format:
                  params["response_format"] = response_format
@@ -107,20 +108,12 @@ If no PII of a certain type is found, do not include it in the summary or set it
     def analyze_medical_report(self, report_text, report_type="general"):
         """Analyze medical reports for potential errors and inconsistencies"""
         system_prompt = f"""
-You are an AI medical report analyzer specializing in {report_type} reports. Analyze the provided medical report text for potential errors.
-The user will provide a block of text. You MUST return this exact block of text as the 'original_text' field in your JSON response.
-For each identified issue, provide:
-1.  `type`: The type of error (e.g., 'Factual Inconsistency', 'Typographical Error', 'Misspelled Terminology', 'Unit Inconsistency', 'Potential Misdiagnosis', 'Grammar/Syntax', 'Omission', 'Clarity Issue').
-2.  `description`: A brief description of the issue.
-3.  `segment`: The EXACT problematic text segment from the 'original_text'. This MUST be an exact substring from the original report.
-4.  `suggestion`: A suggested correction or clarification for the 'segment'.
-Also, provide an overall `accuracy_score` for the report (0-100), where 100 is perfectly accurate and error-free.
-Finally, provide an `error_distribution` as a dictionary of error types and their counts.
-Output format MUST be a JSON object with the following keys:
-- `original_text`: The original report text exactly as provided by the user for analysis.
-- `flagged_issues`: An array of objects, each representing an issue with 'type', 'description', 'segment', and 'suggestion'.
-- `accuracy_score`: A float between 0 and 100.
-- `error_distribution`: A dictionary summarizing error counts by type.
+Analyze this {report_type} medical report for errors. Return JSON with:
+- `original_text`: exact input text
+- `flagged_issues`: array of errors with type, description, segment, suggestion
+- `accuracy_score`: 0-100 accuracy rating
+- `error_distribution`: count of error types
+Focus on spelling, grammar, medical terminology, and clarity issues.
 """
         user_prompt = f"Analyze this {report_type} report:\n\n---\n{report_text}\n---"
         messages = [
@@ -130,8 +123,8 @@ Output format MUST be a JSON object with the following keys:
 
         raw_response, error = self._make_chat_completion_request(
             messages,
-            model="gpt-4-turbo" if self.client else "gpt-3.5-turbo",
-            max_tokens=3500,
+            model="gpt-3.5-turbo-0125",
+            max_tokens=2000,
             temperature=0.15,
             response_format={ "type": "json_object" }
         )
