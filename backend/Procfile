@@ -1,0 +1,4 @@
+web: chmod +x start.sh && ./start.sh
+worker: celery -A config worker --loglevel=info
+beat: celery -A config beat --loglevel=info
+release: echo "Release phase handled in start.sh"
