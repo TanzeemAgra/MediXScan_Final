@@ -8,7 +8,7 @@ const apiConfig = {
              import.meta.env.VITE_API_URL || 
              (import.meta.env.MODE === 'production' ? 'https://medixscanfinal-production.up.railway.app' : 'http://localhost:8000'),
     version: 'v1',
-    timeout: parseInt(import.meta.env.VITE_API_TIMEOUT) || 10000,
+    timeout: parseInt(import.meta.env.VITE_API_TIMEOUT) || 30000,
     retryAttempts: parseInt(import.meta.env.VITE_API_RETRY_ATTEMPTS) || 3,
     retryDelay: 1000
   },
