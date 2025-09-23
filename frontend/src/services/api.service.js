@@ -94,15 +94,26 @@ class ApiService {
 
     // Add auth token if available
     const token = this.getAuthToken();
+
+    // ALWAYS log for debugging authentication issues
+    console.log('🔍 API Service Debug - buildHeaders called');
+    console.log('🔍 All localStorage keys:', Object.keys(localStorage));
+    console.log('🔍 Token found:', token ? `${token.substring(0, 30)}...` : 'NO TOKEN');
+
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
-      if (apiConfig.features.errorReporting.logToConsole) {
-        console.log('Authorization header set with token:', token.substring(0, 20) + '...');
-      }
-    } else if (apiConfig.features.errorReporting.logToConsole) {
-      console.warn('No token found, Authorization header not set');
+      console.log('✅ Authorization header set successfully');
+    } else {
+      console.error('❌ NO AUTHORIZATION HEADER SET - This will cause 401 errors!');
+      console.log('🔍 localStorage contents:');
+      Object.keys(localStorage).forEach(key => {
+        if (key.includes('token') || key.includes('auth')) {
+          console.log(`  ${key}: ${localStorage.getItem(key)?.substring(0, 50)}...`);
+        }
+      });
     }
 
+    console.log('🔍 Final headers:', headers);
     return { ...headers, ...customHeaders };
   }
 

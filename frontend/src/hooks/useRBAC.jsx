@@ -64,23 +64,41 @@ export const RBACProvider = ({ children }) => {
         };
 
         const response = await authService.login(payload);
+
+        // COMPREHENSIVE DEBUGGING FOR LOGIN PROCESS
+        console.log('🔍 LOGIN DEBUG - Full response:', response);
+
         if (response && response.user) {
           const userData = response.user;
           // Handle both token formats (nested and flat)
           const accessToken = response.tokens?.access || response.access;
           const refreshToken = response.tokens?.refresh || response.refresh;
 
+          console.log('🔍 LOGIN DEBUG - Extracted tokens:');
+          console.log('  Access Token:', accessToken ? `${accessToken.substring(0, 50)}...` : 'NO ACCESS TOKEN');
+          console.log('  Refresh Token:', refreshToken ? `${refreshToken.substring(0, 50)}...` : 'NO REFRESH TOKEN');
+
+          // Store tokens
           localStorage.setItem('medixscan_user', JSON.stringify(userData));
           localStorage.setItem('medixscan_access_token', accessToken);
           if (refreshToken) {
             localStorage.setItem('medixscan_refresh_token', refreshToken);
           }
 
+          // Verify storage immediately
+          console.log('🔍 LOGIN DEBUG - Verifying localStorage after storage:');
+          console.log('  medixscan_access_token:', localStorage.getItem('medixscan_access_token')?.substring(0, 50) + '...');
+          console.log('  medixscan_refresh_token:', localStorage.getItem('medixscan_refresh_token')?.substring(0, 50) + '...');
+          console.log('  All keys:', Object.keys(localStorage));
+
           setUser(userData);
           setRole(userData.role || 'viewer');
           setPermissions(rbacConfig.rolePermissions[userData.role] || rbacConfig.rolePermissions.viewer);
 
+          console.log('✅ LOGIN SUCCESS - Tokens stored, user authenticated');
           return { success: true, user: userData };
+        } else {
+          console.error('❌ LOGIN FAILED - Invalid response structure:', response);
         }
         return { success: false, error: 'Invalid login response from server' };
       } else {
