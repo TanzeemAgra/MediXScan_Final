@@ -234,6 +234,9 @@ CACHES = {
     }
 }
 
+# OpenAI Configuration for AI Services
+OPENAI_API_KEY = config('OPENAI_API_KEY', default='')
+
 # Security Settings for Production
 if not DEBUG:
     SECURE_BROWSER_XSS_FILTER = True

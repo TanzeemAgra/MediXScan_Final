@@ -23,10 +23,20 @@ class ApiService {
 
   // Get authentication token from localStorage
   getAuthToken() {
-    // Support both legacy and new token keys
-    return localStorage.getItem('medixscan_access_token') ||
-           localStorage.getItem('medixscan_auth_token') ||
-           localStorage.getItem('authToken');
+    // Debug logging to help diagnose issues
+    const token = localStorage.getItem('medixscan_access_token') ||
+                  localStorage.getItem('medixscan_auth_token') ||
+                  localStorage.getItem('authToken') ||
+                  localStorage.getItem('access_token') ||
+                  localStorage.getItem('token');
+
+    if (!token && apiConfig.features.errorReporting.logToConsole) {
+      console.warn('No authentication token found in localStorage. Keys checked:', [
+        'medixscan_access_token', 'medixscan_auth_token', 'authToken', 'access_token', 'token'
+      ]);
+    }
+
+    return token;
   }
 
   // Get refresh token from localStorage
@@ -81,13 +91,18 @@ class ApiService {
   // Build request headers
   buildHeaders(customHeaders = {}) {
     const headers = { ...apiConfig.headers.default };
-    
+
     // Add auth token if available
     const token = this.getAuthToken();
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
+      if (apiConfig.features.errorReporting.logToConsole) {
+        console.log('Authorization header set with token:', token.substring(0, 20) + '...');
+      }
+    } else if (apiConfig.features.errorReporting.logToConsole) {
+      console.warn('No token found, Authorization header not set');
     }
-    
+
     return { ...headers, ...customHeaders };
   }
 
