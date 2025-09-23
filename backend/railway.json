@@ -5,7 +5,7 @@
     "dockerfilePath": "Dockerfile.railway"
   },
   "deploy": {
-    "healthcheckPath": "/api/v1/dashboard/health/",
+    "healthcheckPath": "/health/",
     "healthcheckTimeout": 100,
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10,
@@ -18,7 +18,7 @@
         "dockerfilePath": "Dockerfile.railway"
       },
       "deploy": {
-        "healthcheckPath": "/api/v1/dashboard/health/",
+        "healthcheckPath": "/health/",
         "healthcheckTimeout": 100,
         "restartPolicyType": "ON_FAILURE",
         "restartPolicyMaxRetries": 10
