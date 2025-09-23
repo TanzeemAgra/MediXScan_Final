@@ -26,13 +26,17 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         return user
 
 class UserLoginSerializer(serializers.Serializer):
-    username = serializers.CharField(help_text="Username or email address")
+    username = serializers.CharField(required=False, help_text="Username or email address")
+    email = serializers.CharField(required=False, help_text="Email address")
     password = serializers.CharField()
-    
+
     def validate(self, attrs):
-        username_or_email = attrs.get('username')
+        username_or_email = attrs.get('username') or attrs.get('email')
         password = attrs.get('password')
-        
+
+        if not username_or_email:
+            raise serializers.ValidationError("Either username or email is required")
+
         if username_or_email and password:
             # Soft-coded authentication: Try both username and email
             user = None
