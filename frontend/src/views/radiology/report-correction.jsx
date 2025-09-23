@@ -34,7 +34,7 @@ const ReportCorrection = () => {
     setError(null);
     setSubmitting(true);
     try {
-      const payload = { medical_record_id: recordId, text };
+      const payload = { record_id: recordId, report_text: text };
       const res = await correctionService.submit(payload);
       setResult(res);
       // Build highlighted view from returned corrections if available

@@ -18,7 +18,7 @@ const correctionService = {
   analyze: async (text) => {
     // Use configured analyze endpoint from API config
     const endpoint = apiConfig.endpoints.medicalRecords.corrections.analyze;
-    return apiService.post(endpoint, { text });
+    return apiService.post(endpoint, { report_text: text });
   },
 
   accept: async (request_id) => {
