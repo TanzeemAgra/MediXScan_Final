@@ -1,0 +1,14 @@
+# Runtime and Build Configuration for Railway
+# Soft-coded deployment configuration for MediXScan Backend
+
+[build]
+command = "pip install -r requirements.txt"
+
+[deploy]
+command = "chmod +x start.sh && ./start.sh"
+
+[env]
+# Environment variables - set these in Railway dashboard
+PYTHONUNBUFFERED = "1"
+DJANGO_SETTINGS_MODULE = "config.settings"
+PORT = "8000"
