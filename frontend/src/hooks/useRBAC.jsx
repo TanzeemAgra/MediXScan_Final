@@ -56,74 +56,51 @@ export const RBACProvider = ({ children }) => {
     try {
       setLoading(true);
       setError(null);
-      // If configured, call backend auth; otherwise fallback to mock user
-      if (authConfig.useBackendAuth) {
-        const payload = {
-          username: credentials.username || credentials.email,
-          password: credentials.password
-        };
 
-        const response = await authService.login(payload);
+      // ALWAYS USE BACKEND AUTHENTICATION - NO MORE MOCK!
+      console.log('✅ Using REAL backend authentication');
+      const payload = {
+        username: credentials.username || credentials.email,
+        password: credentials.password
+      };
 
-        // COMPREHENSIVE DEBUGGING FOR LOGIN PROCESS
-        console.log('🔍 LOGIN DEBUG - Full response:', response);
+      const response = await authService.login(payload);
 
-        if (response && response.user) {
-          const userData = response.user;
-          // Handle both token formats (nested and flat)
-          const accessToken = response.tokens?.access || response.access;
-          const refreshToken = response.tokens?.refresh || response.refresh;
+      // COMPREHENSIVE DEBUGGING FOR LOGIN PROCESS
+      console.log('🔍 LOGIN DEBUG - Full response:', response);
 
-          console.log('🔍 LOGIN DEBUG - Extracted tokens:');
-          console.log('  Access Token:', accessToken ? `${accessToken.substring(0, 50)}...` : 'NO ACCESS TOKEN');
-          console.log('  Refresh Token:', refreshToken ? `${refreshToken.substring(0, 50)}...` : 'NO REFRESH TOKEN');
+      if (response && response.user) {
+        const userData = response.user;
+        // Handle both token formats (nested and flat)
+        const accessToken = response.tokens?.access || response.access;
+        const refreshToken = response.tokens?.refresh || response.refresh;
 
-          // Store tokens
-          localStorage.setItem('medixscan_user', JSON.stringify(userData));
-          localStorage.setItem('medixscan_access_token', accessToken);
-          if (refreshToken) {
-            localStorage.setItem('medixscan_refresh_token', refreshToken);
-          }
+        console.log('🔍 LOGIN DEBUG - Extracted tokens:');
+        console.log('  Access Token:', accessToken ? `${accessToken.substring(0, 50)}...` : 'NO ACCESS TOKEN');
+        console.log('  Refresh Token:', refreshToken ? `${refreshToken.substring(0, 50)}...` : 'NO REFRESH TOKEN');
 
-          // Verify storage immediately
-          console.log('🔍 LOGIN DEBUG - Verifying localStorage after storage:');
-          console.log('  medixscan_access_token:', localStorage.getItem('medixscan_access_token')?.substring(0, 50) + '...');
-          console.log('  medixscan_refresh_token:', localStorage.getItem('medixscan_refresh_token')?.substring(0, 50) + '...');
-          console.log('  All keys:', Object.keys(localStorage));
-
-          setUser(userData);
-          setRole(userData.role || 'viewer');
-          setPermissions(rbacConfig.rolePermissions[userData.role] || rbacConfig.rolePermissions.viewer);
-
-          console.log('✅ LOGIN SUCCESS - Tokens stored, user authenticated');
-          return { success: true, user: userData };
-        } else {
-          console.error('❌ LOGIN FAILED - Invalid response structure:', response);
+        // Store tokens
+        localStorage.setItem('medixscan_user', JSON.stringify(userData));
+        localStorage.setItem('medixscan_access_token', accessToken);
+        if (refreshToken) {
+          localStorage.setItem('medixscan_refresh_token', refreshToken);
         }
-        return { success: false, error: 'Invalid login response from server' };
-      } else {
-        // Mock login for development/demo
-        const mockUser = {
-          id: 1,
-          username: credentials.username,
-          email: credentials.email || `${credentials.username}@medixscan.com`,
-          role: credentials.role || 'radiologist',
-          firstName: 'John',
-          lastName: 'Doe',
-          avatar: '/assets/images/user/01.jpg',
-          department: 'Radiology',
-          lastLogin: new Date().toISOString()
-        };
 
-        // Store user data
-        localStorage.setItem('medixscan_user', JSON.stringify(mockUser));
-        localStorage.setItem('medixscan_auth_token', 'mock-jwt-token');
-        
-        setUser(mockUser);
-        setRole(mockUser.role);
-        setPermissions(rbacConfig.rolePermissions[mockUser.role] || rbacConfig.rolePermissions.viewer);
-        
-        return { success: true, user: mockUser };
+        // Verify storage immediately
+        console.log('🔍 LOGIN DEBUG - Verifying localStorage after storage:');
+        console.log('  medixscan_access_token:', localStorage.getItem('medixscan_access_token')?.substring(0, 50) + '...');
+        console.log('  medixscan_refresh_token:', localStorage.getItem('medixscan_refresh_token')?.substring(0, 50) + '...');
+        console.log('  All keys:', Object.keys(localStorage));
+
+        setUser(userData);
+        setRole(userData.role || 'viewer');
+        setPermissions(rbacConfig.rolePermissions[userData.role] || rbacConfig.rolePermissions.viewer);
+
+        console.log('✅ LOGIN SUCCESS - Tokens stored, user authenticated');
+        return { success: true, user: userData };
+      } else {
+        console.error('❌ LOGIN FAILED - Invalid response structure:', response);
+        return { success: false, error: 'Invalid login response from server' };
       }
     } catch (error) {
       setError(error);
@@ -135,11 +112,18 @@ export const RBACProvider = ({ children }) => {
 
   // Logout function
   const logout = () => {
+    // Remove all auth tokens
     localStorage.removeItem('medixscan_user');
-    localStorage.removeItem('medixscan_auth_token');
+    localStorage.removeItem('medixscan_access_token');
+    localStorage.removeItem('medixscan_refresh_token');
+    localStorage.removeItem('medixscan_auth_token'); // Legacy token
+    localStorage.removeItem('authToken'); // Fallback token
+
     setUser(null);
     setRole('viewer');
     setPermissions(rbacConfig.rolePermissions.viewer);
+
+    console.log('🚪 LOGOUT - All tokens cleared');
   };
 
   // Switch role (for demo purposes)
