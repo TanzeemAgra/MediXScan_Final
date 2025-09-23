@@ -126,15 +126,6 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 (
-                    "related_prescription",
-                    models.ForeignKey(
-                        blank=True,
-                        null=True,
-                        on_delete=django.db.models.deletion.CASCADE,
-                        to="medical_records.prescription",
-                    ),
-                ),
-                (
                     "sender",
                     models.ForeignKey(
                         blank=True,
