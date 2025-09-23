@@ -189,17 +189,21 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5173",
     # Production frontends
     "https://medixscan.vercel.app",
-    "https://medixscanfinal.vercel.app", 
+    "https://medixscanfinal.vercel.app",
     "https://medixscan-frontend.netlify.app",
-    # Add your actual frontend domain here when deployed
+    # ACTUAL DEPLOYED FRONTEND DOMAINS
+    "https://www.rugrel.in",
+    "https://rugrel.in",
 ]
 
 # Railway-specific CORS settings
-if 'RAILWAY_ENVIRONMENT' in os.environ:
+if 'RAILWAY_ENVIRONMENT' in os.environ or 'RAILWAY_PROJECT_ID' in os.environ or os.environ.get('NIXPACKS'):
     CORS_ALLOWED_ORIGINS.extend([
         "https://medixscan.vercel.app",
         "https://medixscanfinal.vercel.app",
         "https://medixscanfinal-frontend.vercel.app",
+        "https://www.rugrel.in",
+        "https://rugrel.in",
     ])
 
 CORS_ALLOW_CREDENTIALS = True
