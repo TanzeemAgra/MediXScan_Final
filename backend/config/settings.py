@@ -19,11 +19,16 @@ DEBUG = config('DEBUG', default=True, cast=bool)
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
 
-# Railway Configuration
-if 'RAILWAY_ENVIRONMENT' in os.environ:
-    # Production settings for Railway
-    ALLOWED_HOSTS.extend(['*.railway.app', '*.up.railway.app'])
-    
+# Always include Railway domains for production deployment
+ALLOWED_HOSTS.extend([
+    '*.railway.app',
+    '*.up.railway.app',
+    'medixscanfinal-production.up.railway.app'
+])
+
+# Railway Configuration - detect Railway by multiple environment variables
+if 'RAILWAY_ENVIRONMENT' in os.environ or 'RAILWAY_PROJECT_ID' in os.environ or os.environ.get('NIXPACKS'):
+
     # Use Railway's provided PORT
     PORT = os.environ.get('PORT', 8000)
 
