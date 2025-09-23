@@ -13,12 +13,13 @@ logger = logging.getLogger(__name__)
 def analyze_report_with_ai(request):
     """Analyze medical report text for errors using AI"""
     try:
-        report_text = request.data.get('report_text', '')
+        # Accept both 'report_text' and 'text' parameter names for flexibility
+        report_text = request.data.get('report_text', '') or request.data.get('text', '')
         report_type = request.data.get('report_type', 'general')
 
         if not report_text:
             return Response(
-                {'error': 'Report text is required'},
+                {'error': 'Report text is required. Please provide either "report_text" or "text" parameter.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -51,11 +52,12 @@ def analyze_report_with_ai(request):
 def anonymize_text(request):
     """Anonymize medical text by removing PII"""
     try:
-        text_content = request.data.get('text', '')
+        # Accept both 'text' and 'text_content' parameter names for flexibility
+        text_content = request.data.get('text', '') or request.data.get('text_content', '')
 
         if not text_content:
             return Response(
-                {'error': 'Text content is required'},
+                {'error': 'Text content is required. Please provide either "text" or "text_content" parameter.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
