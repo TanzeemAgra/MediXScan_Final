@@ -43,3 +43,4 @@ whitenoise==6.5.0
 # AI Services
 openai>=1.0.0
 Pillow>=10.0.0
+# Force Railway redeploy Tue Sep 23 09:58:10 IST 2025
