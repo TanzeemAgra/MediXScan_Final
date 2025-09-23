@@ -24,7 +24,9 @@ class ApiService {
   // Get authentication token from localStorage
   getAuthToken() {
     // Support both legacy and new token keys
-    return localStorage.getItem('medixscan_auth_token') || localStorage.getItem('authToken');
+    return localStorage.getItem('medixscan_access_token') ||
+           localStorage.getItem('medixscan_auth_token') ||
+           localStorage.getItem('authToken');
   }
 
   // Build request headers
@@ -60,9 +62,11 @@ class ApiService {
     // Handle different status codes based on configuration
     if (apiConfig.statusCodes.unauthorized === status) {
       // Handle unauthorized access
-      // Remove stored token but do not force a navigation here; let UI handle redirect
+      // Remove all stored tokens but do not force a navigation here; let UI handle redirect
       localStorage.removeItem('authToken');
       localStorage.removeItem('medixscan_auth_token');
+      localStorage.removeItem('medixscan_access_token');
+      localStorage.removeItem('medixscan_refresh_token');
       throw {
         type: 'unauthorized',
         message: 'Session expired. Please login again.',

@@ -47,10 +47,10 @@ export const useApi = (serviceFunction, dependencies = [], options = {}) => {
       }
 
       const result = await serviceFunction();
-      
+
       if (mountedRef.current) {
         setData(result);
-        
+
         // Cache the result if enabled
         if (config.cacheKey && apiConfig.features.caching.enabled) {
           setCachedData(config.cacheKey, result);
@@ -59,12 +59,18 @@ export const useApi = (serviceFunction, dependencies = [], options = {}) => {
     } catch (err) {
       if (mountedRef.current) {
         setError(err);
-        
+
+        // Handle 401 errors by stopping auto-refetch to prevent infinite loops
+        if (err.status === 401 || err.type === 'unauthorized') {
+          console.warn('Authentication error - stopping auto-refetch to prevent infinite loop');
+          return;
+        }
+
         // Use mock data as fallback if enabled
         if (config.mockData && apiConfig.features.mockData.fallbackOnError) {
           setData(config.mockData);
         }
-        
+
         // Log error if enabled
         if (apiConfig.features.errorReporting.enabled) {
           console.error('useApi Error:', err);
@@ -87,18 +93,23 @@ export const useApi = (serviceFunction, dependencies = [], options = {}) => {
     if (config.enabled) {
       fetchData();
     }
-  }, [...dependencies, refetchCount]);
+  }, [JSON.stringify(dependencies), refetchCount, config.enabled]);
 
   // Effect for auto-refetch interval
   useEffect(() => {
     if (!config.refetchInterval || !config.enabled) return;
+
+    // Don't auto-refresh if there's an authentication error
+    if (error && (error.status === 401 || error.type === 'unauthorized')) {
+      return;
+    }
 
     const intervalId = setInterval(() => {
       fetchData();
     }, config.refetchInterval);
 
     return () => clearInterval(intervalId);
-  }, [fetchData, config.refetchInterval, config.enabled]);
+  }, [fetchData, config.refetchInterval, config.enabled, error]);
 
   // Cleanup on unmount
   useEffect(() => {
