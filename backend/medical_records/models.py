@@ -108,7 +108,7 @@ class AnonymizationAuditLog(models.Model):
 class AnonymizationConfiguration(models.Model):
     """Model for storing anonymization configuration settings"""
     name = models.CharField(max_length=100, unique=True)
-    settings = models.JSONField(default=dict)
+    config_settings = models.JSONField(default=dict)
     is_active = models.BooleanField(default=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
