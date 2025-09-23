@@ -29,6 +29,55 @@ class ApiService {
            localStorage.getItem('authToken');
   }
 
+  // Get refresh token from localStorage
+  getRefreshToken() {
+    return localStorage.getItem('medixscan_refresh_token') ||
+           localStorage.getItem('refresh_token');
+  }
+
+  // Refresh access token using refresh token
+  async refreshAccessToken() {
+    const refreshToken = this.getRefreshToken();
+    if (!refreshToken) {
+      throw new Error('No refresh token available');
+    }
+
+    try {
+      const response = await fetch(this.buildURL(apiConfig.endpoints.auth.refreshToken), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refresh: refreshToken })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to refresh token');
+      }
+
+      const data = await response.json();
+
+      // Store new access token
+      if (data.access) {
+        localStorage.setItem('medixscan_access_token', data.access);
+      }
+
+      // Store new refresh token if provided
+      if (data.refresh) {
+        localStorage.setItem('medixscan_refresh_token', data.refresh);
+      }
+
+      return data.access;
+    } catch (error) {
+      // If refresh fails, clear all tokens and throw error
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('medixscan_auth_token');
+      localStorage.removeItem('medixscan_access_token');
+      localStorage.removeItem('medixscan_refresh_token');
+      throw error;
+    }
+  }
+
   // Build request headers
   buildHeaders(customHeaders = {}) {
     const headers = { ...apiConfig.headers.default };
@@ -99,8 +148,8 @@ class ApiService {
     };
   }
 
-  // Generic request method with retry logic
-  async makeRequest(url, options = {}, context = '', attempt = 1) {
+  // Generic request method with retry logic and automatic token refresh
+  async makeRequest(url, options = {}, context = '', attempt = 1, skipTokenRefresh = false) {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), this.timeout);
@@ -114,10 +163,24 @@ class ApiService {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
+        // Handle 401 Unauthorized - attempt token refresh
+        if (response.status === 401 && !skipTokenRefresh && this.getRefreshToken()) {
+          try {
+            console.log('Token expired, attempting refresh...');
+            await this.refreshAccessToken();
+
+            // Retry the original request with new token
+            return this.makeRequest(url, options, context, attempt, true);
+          } catch (refreshError) {
+            console.error('Token refresh failed:', refreshError);
+            // Continue with original error handling
+          }
+        }
+
         // Soft-coded error handling: Try to parse JSON, fallback to text for HTML responses
         let errorData;
         const contentType = response.headers.get('content-type');
-        
+
         try {
           if (contentType && contentType.includes('application/json')) {
             errorData = await response.json();
@@ -126,7 +189,7 @@ class ApiService {
             const textResponse = await response.text();
             errorData = {
               message: `Server returned ${response.status}`,
-              detail: textResponse.includes('<!DOCTYPE') 
+              detail: textResponse.includes('<!DOCTYPE')
                 ? `Server returned HTML instead of JSON. Check if the endpoint exists.`
                 : textResponse
             };
@@ -138,7 +201,7 @@ class ApiService {
             detail: 'Unable to parse error response'
           };
         }
-        
+
         throw { response: { status: response.status, data: errorData } };
       }
 
@@ -152,13 +215,13 @@ class ApiService {
         throw new Error(`Expected JSON response but received ${contentType || 'unknown content type'}: ${textResponse.substring(0, 100)}...`);
       }
     } catch (error) {
-      if (attempt < this.retryAttempts && 
+      if (attempt < this.retryAttempts &&
           (error.name === 'AbortError' || error.type === 'network')) {
         console.warn(`Retry attempt ${attempt} for ${context}`);
         await new Promise(resolve => setTimeout(resolve, this.retryDelay));
-        return this.makeRequest(url, options, context, attempt + 1);
+        return this.makeRequest(url, options, context, attempt + 1, skipTokenRefresh);
       }
-      
+
       this.handleError(error, context);
     }
   }
@@ -236,6 +299,7 @@ export const authService = {
   login: (credentials) => apiService.post(apiConfig.endpoints.auth.login, credentials),
   logout: () => apiService.post(apiConfig.endpoints.auth.logout),
   register: (userData) => apiService.post(apiConfig.endpoints.auth.register, userData),
+  refreshToken: (refreshToken) => apiService.post(apiConfig.endpoints.auth.refreshToken, { refresh: refreshToken }),
   getProfile: () => apiService.get(apiConfig.endpoints.auth.profile),
   changePassword: (passwords) => apiService.post(apiConfig.endpoints.auth.changePassword, passwords)
 };

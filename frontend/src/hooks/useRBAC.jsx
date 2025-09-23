@@ -64,12 +64,17 @@ export const RBACProvider = ({ children }) => {
         };
 
         const response = await authService.login(payload);
-        if (response && response.tokens && response.user) {
+        if (response && response.user) {
           const userData = response.user;
-          const token = response.tokens.access;
+          // Handle both token formats (nested and flat)
+          const accessToken = response.tokens?.access || response.access;
+          const refreshToken = response.tokens?.refresh || response.refresh;
 
           localStorage.setItem('medixscan_user', JSON.stringify(userData));
-          localStorage.setItem('medixscan_auth_token', token);
+          localStorage.setItem('medixscan_access_token', accessToken);
+          if (refreshToken) {
+            localStorage.setItem('medixscan_refresh_token', refreshToken);
+          }
 
           setUser(userData);
           setRole(userData.role || 'viewer');
