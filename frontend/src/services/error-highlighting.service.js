@@ -3,8 +3,7 @@
  * Soft-coded approach to detect and highlight English grammar and medical terminology errors
  */
 
-// Import will be done dynamically to avoid module loading issues
-let medicalTerminologyService = null;
+import medicalTerminologyService from './medical-terminology.service.js';
 
 class ErrorHighlightingService {
   constructor() {

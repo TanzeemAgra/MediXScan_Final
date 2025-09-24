@@ -1,0 +1,69 @@
+# Git and version control
+.git/
+.gitignore
+.github/
+
+# Docker files
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment and secrets
+.env
+.env.*
+*.pem
+
+# Documentation
+*.md
+Documentation/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Node.js (if any)
+node_modules/
+npm-debug.log*
+
+# Build outputs
+build/
+dist/
+*.log
+
+# Backend specific
+backend/migrations/
+backend/static_collected/
+backend/media_files/
+
+# Frontend
+frontend/
+
+# Railway specific files (not needed for local)
+*.railway
+railway.toml
+Procfile
+
+# Deployment files
+DEPLOYMENT_GUIDE.md
+RAILWAY_*.md
+VERCEL_*.md
+SUPERUSER_*.md
+ENVIRONMENT_*.md
