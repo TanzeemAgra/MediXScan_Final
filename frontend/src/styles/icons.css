@@ -1,0 +1,130 @@
+/* Soft-Coded Icon Styling for Production Safety */
+/* Ensures consistent icon appearance across all fallback strategies */
+
+.emoji-icon {
+  display: inline-block;
+  vertical-align: middle;
+  line-height: 1;
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", sans-serif;
+}
+
+.text-icon {
+  display: inline-block;
+  vertical-align: middle;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.generic-icon {
+  display: inline-block;
+  vertical-align: middle;
+  font-weight: bold;
+  text-align: center;
+  line-height: 1;
+  color: #6c757d;
+  opacity: 0.7;
+}
+
+/* Icon container for consistent spacing */
+.icon-container {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1em;
+  min-height: 1em;
+}
+
+/* Responsive icon sizes */
+.icon-xs { font-size: 0.75rem; }
+.icon-sm { font-size: 0.875rem; }
+.icon-md { font-size: 1rem; }
+.icon-lg { font-size: 1.25rem; }
+.icon-xl { font-size: 1.5rem; }
+
+/* Icon states for interactive elements */
+.icon-interactive {
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.icon-interactive:hover {
+  transform: scale(1.1);
+  opacity: 0.8;
+}
+
+/* Medical-themed color classes */
+.icon-medical { color: #089bab; }
+.icon-emergency { color: #dc3545; }
+.icon-warning { color: #ffc107; }
+.icon-success { color: #28a745; }
+.icon-info { color: #17a2b8; }
+
+/* Pulse animation for critical alerts */
+.icon-pulse {
+  animation: iconPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+/* Loading state for dynamic icons */
+.icon-loading {
+  animation: iconSpin 1s linear infinite;
+}
+
+@keyframes iconSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Accessibility improvements */
+.icon-container[role="img"] {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+}
+
+.icon-container:focus {
+  outline: 2px solid #089bab;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .generic-icon {
+    color: currentColor;
+    opacity: 1;
+    font-weight: 900;
+  }
+  
+  .emoji-icon {
+    filter: contrast(1.5);
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .icon-pulse,
+  .icon-loading,
+  .icon-interactive:hover {
+    animation: none;
+    transform: none;
+  }
+}
+
+/* Dark theme support */
+@media (prefers-color-scheme: dark) {
+  .generic-icon {
+    color: #adb5bd;
+  }
+  
+  .text-icon {
+    color: #f8f9fa;
+  }
+}

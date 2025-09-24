@@ -1,99 +1,167 @@
 /**
- * Error Highlighting Styles for Medical Report Corrections
- * Provides visual distinction between different types of errors and corrections
+ * Enhanced Error Highlighting Styles for Medical Report Corrections
+ * Professional medical interface with improved readability and visibility
  */
 
-/* Base error highlight styles */
+/* Enhanced base styles with larger fonts */
+.enhanced-error-display {
+  font-size: 16px;
+  line-height: 1.6;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #333;
+}
+
+.enhanced-error-display h5 {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: #2c3e50;
+}
+
+.enhanced-error-display h6 {
+  font-size: 18px;
+  font-weight: 500;
+  margin-bottom: 15px;
+  color: #34495e;
+}
+
+/* Base error highlight styles - Enhanced for visibility */
 .error-highlight {
   position: relative;
-  padding: 2px 4px;
-  border-radius: 3px;
+  padding: 4px 8px;
+  border-radius: 6px;
   cursor: help;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   display: inline;
-  font-weight: 500;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 1.5;
+  border: 2px solid transparent;
 }
 
 .error-highlight:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-width: 2px;
+  font-weight: 700;
 }
 
-/* Grammar error highlighting */
+/* Grammar error highlighting - Enhanced visibility */
 .error-highlight[data-error-type="grammar"] {
-  background-color: #fff3cd;
-  border: 1px solid #ffeaa7;
-  color: #856404;
+  background-color: #fff8dc;
+  border: 2px solid #f39c12;
+  color: #8b4513;
+  font-size: 16px;
 }
 
 .error-highlight[data-error-type="grammar"]:hover {
-  background-color: #ffeaa7;
+  background-color: #f39c12;
+  color: white;
+  box-shadow: 0 4px 15px rgba(243, 156, 18, 0.4);
 }
 
-/* Medical spelling error highlighting */
+/* Medical spelling error highlighting - Enhanced */
 .error-highlight[data-error-type="spelling"] {
-  background-color: #f8d7da;
-  border: 1px solid #f5c6cb;
-  color: #721c24;
+  background-color: #ffe6e6;
+  border: 2px solid #e74c3c;
+  color: #c0392b;
+  font-size: 16px;
 }
 
 .error-highlight[data-error-type="spelling"]:hover {
-  background-color: #f5c6cb;
+  background-color: #e74c3c;
+  color: white;
+  box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4);
 }
 
-/* Medical abbreviation highlighting */
+/* Medical terminology error highlighting - Enhanced visibility */
+.error-highlight[data-error-type="medical"] {
+  background-color: #e8f5e8;
+  border: 2px solid #27ae60;
+  color: #196f3d;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.error-highlight[data-error-type="medical"]:hover {
+  background-color: #27ae60;
+  color: white;
+  box-shadow: 0 4px 15px rgba(39, 174, 96, 0.4);
+}
+
+/* Medical abbreviation highlighting - Enhanced */
 .error-highlight[data-error-type="abbreviation"] {
-  background-color: #d1ecf1;
-  border: 1px solid #b8daff;
-  color: #0c5460;
+  background-color: #e6f3ff;
+  border: 2px solid #3498db;
+  color: #1e3a8a;
+  font-size: 16px;
+  font-weight: 600;
 }
 
 .error-highlight[data-error-type="abbreviation"]:hover {
-  background-color: #b8daff;
+  background-color: #3498db;
+  color: white;
+  box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4);
 }
 
-/* Medical enhancement highlighting */
+/* Medical enhancement highlighting - Enhanced */
 .error-highlight[data-error-type="enhancement"] {
-  background-color: #d4edda;
-  border: 1px solid #c3e6cb;
-  color: #155724;
+  background-color: #f0fff0;
+  border: 2px solid #2ecc71;
+  color: #27ae60;
+  font-size: 16px;
+  font-weight: 600;
 }
 
 .error-highlight[data-error-type="enhancement"]:hover {
-  background-color: #c3e6cb;
+  background-color: #2ecc71;
+  color: white;
+  box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4);
 }
 
-/* Punctuation error highlighting */
+/* Punctuation error highlighting - Enhanced */
 .error-highlight[data-error-type="punctuation"] {
-  background-color: #e2e3e5;
-  border: 1px solid #d6d8db;
-  color: #383d41;
+  background-color: #f8f9fa;
+  border: 2px solid #6c757d;
+  color: #343a40;
+  font-size: 16px;
+  font-weight: 600;
 }
 
 .error-highlight[data-error-type="punctuation"]:hover {
-  background-color: #d6d8db;
+  background-color: #6c757d;
+  color: white;
+  box-shadow: 0 4px 15px rgba(108, 117, 125, 0.4);
 }
 
-/* Capitalization error highlighting */
+/* Capitalization error highlighting - Enhanced */
 .error-highlight[data-error-type="capitalization"] {
-  background-color: #ffeaa7;
-  border: 1px solid #fdcb6e;
-  color: #6c757d;
+  background-color: #fff8dc;
+  border: 2px solid #f1c40f;
+  color: #b7950b;
+  font-size: 16px;
+  font-weight: 600;
 }
 
 .error-highlight[data-error-type="capitalization"]:hover {
-  background-color: #fdcb6e;
+  background-color: #f1c40f;
+  color: white;
+  box-shadow: 0 4px 15px rgba(241, 196, 15, 0.4);
 }
 
-/* Verified medical terms (no error, just highlighting) */
+/* Verified medical terms (no error, just highlighting) - Enhanced */
 .error-highlight[data-error-type="verified"] {
-  background-color: #e7f3ff;
-  border: 1px solid #bee5eb;
+  background-color: #e8f8ff;
+  border: 2px solid #17a2b8;
   color: #0c5460;
+  font-size: 16px;
+  font-weight: 600;
 }
 
 .error-highlight[data-error-type="verified"]:hover {
-  background-color: #bee5eb;
+  background-color: #17a2b8;
+  color: white;
+  box-shadow: 0 4px 15px rgba(23, 162, 184, 0.4);
 }
 
 /* Diff styles for comparison view */
@@ -358,6 +426,145 @@
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+/* Enhanced Medical UI Components for Team Visibility */
+
+/* Enhanced headings for medical interface */
+.card-title, .modal-title, h1, h2, h3, h4, h5, h6 {
+  font-size: 1.5rem !important;
+  font-weight: 700 !important;
+  color: #2c3e50 !important;
+  margin-bottom: 1rem !important;
+  line-height: 1.4 !important;
+}
+
+.card-title {
+  font-size: 1.75rem !important;
+}
+
+.modal-title {
+  font-size: 1.6rem !important;
+}
+
+/* Enhanced buttons for medical interface */
+.btn {
+  font-size: 1.1rem !important;
+  font-weight: 600 !important;
+  padding: 12px 24px !important;
+  border-radius: 8px !important;
+  border-width: 2px !important;
+  transition: all 0.3s ease !important;
+}
+
+.btn-primary {
+  background-color: #007bff !important;
+  border-color: #007bff !important;
+  color: white !important;
+}
+
+.btn-primary:hover {
+  background-color: #0056b3 !important;
+  border-color: #0056b3 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3) !important;
+}
+
+.btn-success {
+  background-color: #28a745 !important;
+  border-color: #28a745 !important;
+}
+
+.btn-success:hover {
+  background-color: #1e7e34 !important;
+  border-color: #1e7e34 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3) !important;
+}
+
+/* Enhanced form controls */
+.form-control {
+  font-size: 1.1rem !important;
+  padding: 12px 16px !important;
+  border-width: 2px !important;
+  border-radius: 6px !important;
+  line-height: 1.5 !important;
+}
+
+.form-control:focus {
+  border-color: #007bff !important;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25) !important;
+}
+
+/* Enhanced labels and text */
+.form-label, label {
+  font-size: 1.1rem !important;
+  font-weight: 600 !important;
+  color: #495057 !important;
+  margin-bottom: 8px !important;
+}
+
+/* Enhanced cards */
+.card {
+  border-width: 2px !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+.card-body {
+  padding: 2rem !important;
+}
+
+/* Enhanced alerts */
+.alert {
+  font-size: 1.1rem !important;
+  padding: 16px 20px !important;
+  border-width: 2px !important;
+  border-radius: 8px !important;
+  line-height: 1.5 !important;
+}
+
+/* Enhanced modal for better readability */
+.modal-content {
+  border-radius: 12px !important;
+  border-width: 2px !important;
+}
+
+.modal-body {
+  font-size: 1.1rem !important;
+  line-height: 1.6 !important;
+  padding: 2rem !important;
+}
+
+/* Enhanced navigation tabs */
+.nav-link {
+  font-size: 1.1rem !important;
+  font-weight: 600 !important;
+  padding: 12px 20px !important;
+}
+
+.nav-link.active {
+  font-weight: 700 !important;
+  border-width: 3px !important;
+}
+
+/* Enhanced text areas for medical reports */
+textarea.form-control {
+  min-height: 250px !important;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+  font-size: 1.1rem !important;
+  line-height: 1.6 !important;
+}
+
+/* Enhanced statistics and metrics display */
+.stat-number {
+  font-size: 2rem !important;
+  font-weight: 800 !important;
+}
+
+.stat-label {
+  font-size: 1rem !important;
+  font-weight: 600 !important;
 }
 
 /* Dark mode support */

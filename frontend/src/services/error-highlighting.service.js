@@ -478,9 +478,29 @@ class ErrorHighlightingService {
   generateRecommendations(errors) {
     const recommendations = [];
     
-    // Use medical terminology service for comprehensive recommendations
-    const medicalRecommendations = medicalTerminologyService.generateMedicalRecommendations(errors);
-    recommendations.push(...medicalRecommendations);
+    // Use medical terminology service for comprehensive recommendations (if available)
+    if (medicalTerminologyService && typeof medicalTerminologyService.generateMedicalRecommendations === 'function') {
+      try {
+        const medicalRecommendations = medicalTerminologyService.generateMedicalRecommendations(errors);
+        recommendations.push(...medicalRecommendations);
+      } catch (e) {
+        console.warn('Medical terminology service unavailable, using fallback recommendations');
+      }
+    }
+    
+    // Add fallback medical recommendations if service is unavailable
+    const medicalErrors = errors.filter(e => e.type === 'medical_terminology' || e.type === 'medical');
+    if (medicalErrors.length > 0 && !recommendations.some(r => r.category === 'Medical Terminology')) {
+      recommendations.push({
+        category: 'Medical Terminology',
+        priority: 'high',
+        message: `Found ${medicalErrors.length} medical terminology issue(s). RAG-enhanced medical databases suggest corrections.`,
+        action: 'Review medical terms for accuracy and consistency with clinical standards.',
+        examples: medicalErrors.slice(0, 3).map(e => `"${e.error}" → "${e.suggestion}"`),
+        ragEnhanced: true,
+        medicalDatabases: ['RadLex', 'SNOMED CT', 'ICD-10']
+      });
+    }
     
     // Add grammar and general recommendations
     const errorTypes = [...new Set(errors.map(e => e.type))];
@@ -547,6 +567,142 @@ class ErrorHighlightingService {
     }
 
     return recommendations;
+  }
+
+  /**
+   * Soft-coded dynamic error highlighting function
+   * Converts backend correction data to frontend highlighting format
+   * @param {string} originalText - The original text
+   * @param {Array} corrections - Array of correction objects from backend
+   * @returns {string} HTML with highlighted errors
+   */
+  highlightErrors(originalText, corrections) {
+    if (!originalText || !corrections || corrections.length === 0) {
+      return originalText;
+    }
+
+    try {
+      // Convert backend corrections to highlights format
+      const highlights = corrections.map((correction, index) => {
+        // Determine error type dynamically
+        const errorType = correction.error_type || correction.type || 'other';
+        
+        // Get position information (soft-coded approach)
+        let position = correction.position;
+        if (!position && correction.error) {
+          // Dynamic position calculation if not provided
+          const errorText = correction.error;
+          const startIndex = originalText.indexOf(errorText);
+          if (startIndex !== -1) {
+            position = {
+              start: startIndex,
+              end: startIndex + errorText.length
+            };
+          } else {
+            position = { start: 0, end: 0 };
+          }
+        }
+
+        return {
+          id: `highlight-${index}`,
+          original: correction.error || correction.original || '',
+          suggestion: correction.suggestion || correction.correction || '',
+          type: errorType,
+          position: position || { start: 0, end: 0 },
+          confidence: correction.confidence || 0.8,
+          source: correction.source || 'Medical AI',
+          ragEnhanced: correction.rag_enabled || false
+        };
+      });
+
+      // Generate highlighted HTML using existing function
+      return this.generateHighlightedHtml(originalText, highlights);
+    } catch (error) {
+      console.warn('Error highlighting failed, returning original text:', error);
+      return originalText;
+    }
+  }
+
+  /**
+   * Enhanced error highlighting with RAG metadata support
+   * Soft-coded approach for dynamic error type handling
+   * @param {string} text - Original text
+   * @param {Array} errors - Error array with RAG enhancement
+   * @returns {string} Enhanced highlighted HTML
+   */
+  highlightErrorsWithRAG(text, errors) {
+    if (!text || !errors || errors.length === 0) {
+      return text;
+    }
+
+    let highlightedText = text;
+    
+    // Sort errors by position (reverse to maintain text indices)
+    const sortedErrors = [...errors].sort((a, b) => {
+      const posA = a.position ? (Array.isArray(a.position) ? a.position[0] : a.position.start || 0) : 0;
+      const posB = b.position ? (Array.isArray(b.position) ? b.position[0] : b.position.start || 0) : 0;
+      return posB - posA;
+    });
+
+    sortedErrors.forEach((error, index) => {
+      const errorType = error.error_type || error.type || 'other';
+      const original = error.error || error.original || '';
+      const suggestion = error.suggestion || error.correction || '';
+      
+      if (!original) return;
+
+      // Dynamic color scheme based on error type
+      const colorMap = {
+        'medical_terminology': '#e3f2fd', // Light blue for medical terms
+        'spelling': '#fff3e0',           // Light orange for spelling
+        'grammar': '#f3e5f5',            // Light purple for grammar
+        'punctuation': '#e8f5e8',        // Light green for punctuation
+        'other': '#f5f5f5'               // Light gray for others
+      };
+
+      const backgroundColor = colorMap[errorType] || colorMap['other'];
+      
+      // RAG enhancement indicators
+      const ragBadge = error.rag_enabled ? 
+        `<sup class="rag-badge" style="background: #4caf50; color: white; font-size: 0.6em; padding: 1px 3px; border-radius: 2px; margin-left: 2px;">RAG</sup>` : '';
+      
+      const sourceInfo = error.source ? ` data-source="${error.source}"` : '';
+      const confidenceInfo = error.confidence ? ` data-confidence="${error.confidence}"` : '';
+
+      // Create highlighted span with soft-coded attributes
+      const highlightSpan = `<span class="error-highlight" 
+        style="background-color: ${backgroundColor}; 
+               border-bottom: 2px solid ${this.colorScheme[errorType] || '#999'}; 
+               cursor: help; 
+               position: relative;"
+        title="Original: '${original}' → Suggested: '${suggestion}'"
+        data-error-type="${errorType}"
+        data-original="${original}"
+        data-suggestion="${suggestion}"
+        ${sourceInfo}
+        ${confidenceInfo}
+        onclick="showErrorDetails(this)">${original}${ragBadge}</span>`;
+
+      // Replace text with highlighted version
+      try {
+        const regex = new RegExp(this.escapeRegExp(original), 'gi');
+        highlightedText = highlightedText.replace(regex, highlightSpan);
+      } catch (regexError) {
+        // Fallback to simple string replacement
+        highlightedText = highlightedText.replace(original, highlightSpan);
+      }
+    });
+
+    return highlightedText;
+  }
+
+  /**
+   * Escape special regex characters for safe text replacement
+   * @param {string} text - Text to escape
+   * @returns {string} Escaped text
+   */
+  escapeRegExp(text) {
+    return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 }
 

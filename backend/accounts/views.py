@@ -33,19 +33,55 @@ def register_user(request):
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
 def login_user(request):
-    """User Login API"""
-    serializer = UserLoginSerializer(data=request.data)
-    if serializer.is_valid():
-        user = serializer.validated_data['user']
-        refresh = RefreshToken.for_user(user)
+    """User Login API with Soft Coding Error Handling"""
+    try:
+        serializer = UserLoginSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.validated_data['user']
+            refresh = RefreshToken.for_user(user)
+            
+            # Soft coding: Enhanced response with detailed user info
+            response_data = {
+                'message': 'Login successful',
+                'user': UserProfileSerializer(user).data,
+                'access': str(refresh.access_token),
+                'refresh': str(refresh),
+                'status': 'success'
+            }
+            
+            return Response(response_data, status=status.HTTP_200_OK)
+        else:
+            # Soft coding: Detailed error response for debugging
+            error_details = serializer.errors
+            
+            # Check if it's a validation error and provide helpful message
+            if 'non_field_errors' in error_details:
+                error_message = error_details['non_field_errors'][0] if error_details['non_field_errors'] else 'Authentication failed'
+            else:
+                error_message = 'Invalid credentials provided'
+            
+            return Response({
+                'message': error_message,
+                'errors': error_details,
+                'status': 'error',
+                'debug_info': {
+                    'received_username': request.data.get('username'),
+                    'received_email': request.data.get('email'),
+                    'has_password': bool(request.data.get('password'))
+                }
+            }, status=status.HTTP_400_BAD_REQUEST)
+            
+    except Exception as e:
+        # Soft coding: Graceful exception handling
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Login error: {str(e)}")
         
         return Response({
-            'message': 'Login successful',
-            'user': UserProfileSerializer(user).data,
-            'access': str(refresh.access_token),
-            'refresh': str(refresh),
-        }, status=status.HTTP_200_OK)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            'message': 'Authentication service temporarily unavailable',
+            'status': 'error',
+            'error_type': 'server_error'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET', 'PUT', 'PATCH'])
 @permission_classes([permissions.IsAuthenticated])

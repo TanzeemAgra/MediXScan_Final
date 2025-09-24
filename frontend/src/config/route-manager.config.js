@@ -103,7 +103,7 @@ class RouteConfigManager {
 
     const routePath = findRoute(this.config, [], currentPath);
     if (routePath) {
-      breadcrumbs.push({ title: 'Home', path: '/' });
+      breadcrumbs.push({ title: 'Home', path: '/dashboard' });
       
       let currentConfigPath = this.config;
       let currentUrlPath = '';

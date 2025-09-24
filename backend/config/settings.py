@@ -19,11 +19,12 @@ DEBUG = config('DEBUG', default=True, cast=bool)
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
 
-# Always include Railway domains for production deployment
+# Always include Railway domains for production deployment and testing hosts
 ALLOWED_HOSTS.extend([
     '*.railway.app',
     '*.up.railway.app',
-    'medixscanfinal-production.up.railway.app'
+    'medixscanfinal-production.up.railway.app',
+    'testserver'  # For Django test client
 ])
 
 # Railway Configuration - detect Railway by multiple environment variables

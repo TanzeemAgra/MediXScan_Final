@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Tab, Nav, Badge, Button, Tooltip, OverlayTrigger } from 'react-bootstrap';
+import { Card, Tab, Nav, Badge, Button, Tooltip, OverlayTrigger, Form, Row, Col } from 'react-bootstrap';
 import errorHighlightingService from '../services/error-highlighting.service';
 import '../assets/scss/error-highlighting.scss';
 
@@ -7,13 +7,36 @@ const EnhancedErrorDisplay = ({ originalText, result, onClose }) => {
   const [analysis, setAnalysis] = useState(null);
   const [activeTab, setActiveTab] = useState('highlighted');
   const [showRecommendations, setShowRecommendations] = useState(false);
+  const [selectedErrorTypes, setSelectedErrorTypes] = useState(['all']); // Dynamic error type filter
 
   useEffect(() => {
-    if (originalText) {
-      const analyzed = errorHighlightingService.analyzeText(originalText);
-      setAnalysis(analyzed);
+    if (originalText && result) {
+      // Check if we have backend correction data
+      const backendAnalysis = result.analysis || result;
+      
+      if (backendAnalysis && backendAnalysis.corrections) {
+        // Use backend correction data with actual corrected text
+        const analyzed = {
+          originalText: originalText,
+          correctedText: backendAnalysis.corrected_text || originalText,
+          errors: backendAnalysis.corrections.map(correction => ({
+            type: correction.error_type,
+            position: correction.position,
+            original: correction.error,
+            suggestion: correction.suggestion,
+            recommendation: correction.recommendation,
+            confidence: correction.confidence
+          })),
+          statistics: backendAnalysis.summary || {}
+        };
+        setAnalysis(analyzed);
+      } else {
+        // Fallback to frontend analysis if no backend data
+        const analyzed = errorHighlightingService.analyzeText(originalText);
+        setAnalysis(analyzed);
+      }
     }
-  }, [originalText]);
+  }, [originalText, result]);
 
   if (!analysis) {
     return <div className="text-center p-4">Analyzing text...</div>;
@@ -40,7 +63,8 @@ const EnhancedErrorDisplay = ({ originalText, result, onClose }) => {
   };
 
   const renderErrorStats = () => {
-    const stats = errorHighlightingService.getErrorStatistics(analysis.errors);
+    const filteredErrors = getFilteredErrors();
+    const stats = errorHighlightingService.getErrorStatistics(filteredErrors);
     
     return (
       <div className="error-stats">
@@ -179,6 +203,59 @@ const EnhancedErrorDisplay = ({ originalText, result, onClose }) => {
     }
   };
 
+  // Get available error types dynamically
+  const availableErrorTypes = analysis ? [...new Set(analysis.errors.map(error => error.error_type || error.type || 'other'))] : [];
+  
+  // Filter errors based on selected types
+  const getFilteredErrors = () => {
+    if (!analysis || selectedErrorTypes.includes('all')) {
+      return analysis?.errors || [];
+    }
+    return analysis.errors.filter(error => selectedErrorTypes.includes(error.error_type || error.type || 'other'));
+  };
+
+  // Handle error type filter changes
+  const handleErrorTypeChange = (errorType, checked) => {
+    if (errorType === 'all') {
+      setSelectedErrorTypes(['all']);
+    } else {
+      let newTypes = selectedErrorTypes.filter(t => t !== 'all');
+      if (checked) {
+        newTypes = [...newTypes, errorType];
+      } else {
+        newTypes = newTypes.filter(t => t !== errorType);
+      }
+      setSelectedErrorTypes(newTypes.length === 0 ? ['all'] : newTypes);
+    }
+  };
+
+  // Generate highlighted HTML for filtered errors
+  const getFilteredHighlightedHtml = () => {
+    if (!analysis) return '';
+    
+    const filteredErrors = getFilteredErrors();
+    
+    // If no errors or all errors filtered out, return original text
+    if (filteredErrors.length === 0) {
+      return analysis.originalText || '';
+    }
+    
+    // Use enhanced RAG highlighting if available
+    try {
+      if (errorHighlightingService.highlightErrorsWithRAG) {
+        return errorHighlightingService.highlightErrorsWithRAG(analysis.originalText, filteredErrors);
+      } else if (errorHighlightingService.highlightErrors) {
+        return errorHighlightingService.highlightErrors(analysis.originalText, filteredErrors);
+      } else {
+        // Fallback to pre-generated highlighted HTML
+        return analysis.highlightedHtml || analysis.originalText || '';
+      }
+    } catch (error) {
+      console.warn('Error highlighting failed, using fallback:', error);
+      return analysis.highlightedHtml || analysis.originalText || '';
+    }
+  };
+
   return (
     <div className="enhanced-error-display">
       {/* Header with statistics */}
@@ -193,6 +270,52 @@ const EnhancedErrorDisplay = ({ originalText, result, onClose }) => {
             {showRecommendations ? 'Hide' : 'Show'} Recommendations
           </Button>
         </div>
+        
+        {/* Dynamic Error Type Filters */}
+        {availableErrorTypes.length > 0 && (
+          <Card className="mb-3">
+            <Card.Body className="py-2">
+              <Row>
+                <Col>
+                  <div className="d-flex align-items-center">
+                    <strong className="me-3">🔍 Filter by Error Type:</strong>
+                    <Form.Check
+                      type="checkbox"
+                      id="filter-all"
+                      label="All Types"
+                      checked={selectedErrorTypes.includes('all')}
+                      onChange={(e) => handleErrorTypeChange('all', e.target.checked)}
+                      className="me-3"
+                    />
+                    {availableErrorTypes.map(errorType => (
+                      <Form.Check
+                        key={errorType}
+                        type="checkbox"
+                        id={`filter-${errorType}`}
+                        label={
+                          <span>
+                            {errorType === 'medical_terminology' ? '🏥 Medical Terminology' : 
+                             errorType === 'spelling' ? '📝 Spelling' : 
+                             errorType === 'grammar' ? '✏️ Grammar' :
+                             errorType === 'punctuation' ? '📍 Punctuation' : 
+                             `📋 ${errorType.charAt(0).toUpperCase() + errorType.slice(1)}`}
+                            <Badge bg="secondary" className="ms-1">
+                              {analysis.errors.filter(e => (e.error_type || e.type || 'other') === errorType).length}
+                            </Badge>
+                          </span>
+                        }
+                        checked={selectedErrorTypes.includes(errorType)}
+                        onChange={(e) => handleErrorTypeChange(errorType, e.target.checked)}
+                        className="me-3"
+                      />
+                    ))}
+                  </div>
+                </Col>
+              </Row>
+            </Card.Body>
+          </Card>
+        )}
+        
         {renderErrorStats()}
         {renderConfidenceBar()}
         {renderErrorLegend()}
@@ -207,8 +330,8 @@ const EnhancedErrorDisplay = ({ originalText, result, onClose }) => {
           <Nav.Item>
             <Nav.Link eventKey="highlighted">
               🔍 Highlighted Errors
-              {analysis.errors.length > 0 && (
-                <Badge bg="danger" className="ms-2">{analysis.errors.length}</Badge>
+              {getFilteredErrors().length > 0 && (
+                <Badge bg="danger" className="ms-2">{getFilteredErrors().length}</Badge>
               )}
             </Nav.Link>
           </Nav.Item>
@@ -235,16 +358,16 @@ const EnhancedErrorDisplay = ({ originalText, result, onClose }) => {
               </div>
               <div 
                 className="report-text"
-                dangerouslySetInnerHTML={{ __html: analysis.highlightedHtml }}
+                dangerouslySetInnerHTML={{ __html: getFilteredHighlightedHtml() }}
                 onClick={handleErrorClick}
               />
               
               {/* Detailed error list */}
-              {analysis.errors.length > 0 && (
+              {getFilteredErrors().length > 0 && (
                 <div className="mt-4">
                   <h6>📝 Detailed Issue List</h6>
                   <div className="list-group">
-                    {analysis.errors.map((error, index) => (
+                    {getFilteredErrors().map((error, index) => (
                       <div key={index} className="list-group-item">
                         <div className="d-flex justify-content-between align-items-start">
                           <div>

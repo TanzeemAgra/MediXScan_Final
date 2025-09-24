@@ -26,6 +26,33 @@ documentation/
 
 ### 2. **🏃 Running the Application**
 - `APPLICATION_RUNNING.md` - How to start both frontend and backend
+
+## ⚠️ **CRITICAL: CORRECT DIRECTORY COMMANDS** ⚠️
+### Backend Server (Django):
+```bash
+# ALWAYS use this exact sequence:
+cd D:\medixscan\backend
+python manage.py runserver
+# Port: 8000 | URL: http://localhost:8000
+```
+
+### Frontend Server (React/Vite):
+```bash
+# ALWAYS use this exact sequence:
+cd D:\medixscan\frontend
+npm run dev  
+# Port: 5173 | URL: http://localhost:5173
+```
+
+### ❌ **NEVER USE THESE INCORRECT COMMANDS:**
+- `cd D:\medixscan; python manage.py runserver` ❌ (WRONG DIRECTORY)
+- `cd D:\medixscan\backend\medixscan; python manage.py runserver` ❌ (TOO DEEP)
+
+### ✅ **ALWAYS USE SEPARATE COMMANDS:**
+- First: Navigate to correct directory
+- Second: Run the server command
+- **REASON**: Windows PowerShell has path issues with combined commands
+
 - Local development server instructions
 - Connection verification guides
 

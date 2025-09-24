@@ -1,0 +1,10 @@
+{
+  "type": "module",
+  "name": "icon-detection-utility",
+  "version": "1.0.0",
+  "description": "Icon detection utility for MediXScan frontend",
+  "main": "detect-missing-icons.js",
+  "scripts": {
+    "detect-icons": "node detect-missing-icons.js"
+  }
+}

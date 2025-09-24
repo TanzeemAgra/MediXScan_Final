@@ -9,7 +9,9 @@ import LandingPage from "../views/LandingPage"
 import HospitalDashboardOne from "../views/dashboard-pages/hospital-dashboard-one"
 import HospitalDashboardTwo from "../views/dashboard-pages/hospital-dashboard-two"
 import PatientDashboard from "../views/dashboard-pages/patient-dashboard"
+import AdvancedPatientDashboard from "../views/dashboard-pages/AdvancedPatientDashboard"
 import Covid19Dashboard from "../views/dashboard-pages/covid-19-dashboard"
+import AdvancedDoctorDashboard from "../views/dashboard-pages/AdvancedDoctorDashboard"
 
 // Email Page
 import Inbox from "../views/email/inbox"
@@ -139,7 +141,7 @@ export const DefaultRoute = [
       },
       {
         path: '/dashboard-pages/dashboard-1',
-        element: <HospitalDashboardOne />
+        element: <AdvancedDoctorDashboard />
       },
       {
         path: '/dashboard-pages/dashboard-2',
@@ -147,7 +149,7 @@ export const DefaultRoute = [
       },
       {
         path: '/dashboard-pages/patient-dashboard',
-        element: <PatientDashboard />
+        element: <AdvancedPatientDashboard />
       },
       {
         path: '/dashboard-pages/dashboard-4',

@@ -268,5 +268,22 @@ Focus on spelling, grammar, medical terminology, and clarity issues.
 
         return response_content, None
 
-# Create singleton instance
-medical_ai_service = MedicalAIService()
+# Lazy singleton instance creation with error handling
+_medical_ai_service = None
+
+def get_medical_ai_service():
+    """
+    Get or create the medical AI service instance
+    Returns None if service cannot be initialized
+    """
+    global _medical_ai_service
+    if _medical_ai_service is None:
+        try:
+            _medical_ai_service = MedicalAIService()
+        except Exception as e:
+            logger.error(f"Failed to initialize Medical AI Service: {e}")
+            _medical_ai_service = None
+    return _medical_ai_service
+
+# For backward compatibility
+medical_ai_service = get_medical_ai_service()

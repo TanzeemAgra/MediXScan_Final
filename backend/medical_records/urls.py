@@ -15,6 +15,7 @@ urlpatterns = [
     path('', include(router.urls)),
 
     # AI-powered endpoints
+    path('corrections/test/', ai_views.test_correction_api, name='test-correction'),
     path('corrections/analyze/', ai_views.analyze_report_with_ai, name='analyze-report'),
     path('corrections/submit/', ai_views.submit_correction_request, name='submit-correction'),
     path('anonymization/anonymize/', ai_views.anonymize_text, name='anonymize-text'),

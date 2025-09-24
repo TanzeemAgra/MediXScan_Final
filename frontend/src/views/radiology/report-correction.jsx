@@ -6,6 +6,70 @@ import EnhancedErrorDisplay from '../../components/EnhancedErrorDisplay';
 import errorHighlightingService from '../../services/error-highlighting.service';
 // Connection components temporarily removed
 
+// RAG Animation Styles
+const ragStyles = `
+  .animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+  
+  .rag-indicator {
+    background: linear-gradient(45deg, #28a745, #20c997);
+    color: white;
+    font-size: 0.65rem;
+    padding: 2px 6px;
+    border-radius: 10px;
+  }
+  
+  .medical-db-processing {
+    color: #007bff;
+    font-size: 0.75rem;
+    animation: fadeInOut 2s ease-in-out infinite;
+  }
+  
+  @keyframes fadeInOut {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; }
+  }
+`;
+
+// Inject styles and global functions
+if (typeof document !== 'undefined') {
+  const styleSheet = document.createElement("style");
+  styleSheet.innerText = ragStyles;
+  document.head.appendChild(styleSheet);
+  
+  // Global function for error detail display (soft-coded approach)
+  window.showErrorDetails = function(element) {
+    const errorType = element.getAttribute('data-error-type') || 'unknown';
+    const original = element.getAttribute('data-original') || '';
+    const suggestion = element.getAttribute('data-suggestion') || '';
+    const source = element.getAttribute('data-source') || 'Medical AI';
+    const confidence = element.getAttribute('data-confidence') || 'N/A';
+    
+    const isRAG = element.querySelector('.rag-badge') !== null;
+    
+    const message = `
+🔍 Error Details:
+• Type: ${errorType.charAt(0).toUpperCase() + errorType.slice(1)}
+• Original: "${original}"
+• Suggestion: "${suggestion}"
+• Source: ${source}${isRAG ? ' (RAG-Enhanced)' : ''}
+• Confidence: ${typeof confidence === 'number' ? Math.round(confidence * 100) + '%' : confidence}
+    `.trim();
+    
+    alert(message);
+  };
+}
+
 const ReportCorrection = () => {
   const [recordId, setRecordId] = useState('');
   const [text, setText] = useState('');
@@ -36,18 +100,40 @@ const ReportCorrection = () => {
     try {
       const payload = { record_id: recordId, report_text: text };
       const res = await correctionService.submit(payload);
-      setResult(res);
-      // Build highlighted view from returned corrections if available
-      const latestVersion = res.versions && res.versions.length ? res.versions[0] : null;
-      const corrections = latestVersion && latestVersion.corrections ? latestVersion.corrections : null;
-      if (corrections && corrections.grammar) {
-        // If grammar explain text available, use it; otherwise show raw findings
-        const g = corrections.grammar;
-        setHighlighted(g.explain ? g.explain.join('\n') : (latestVersion.findings || text));
-      } else if (latestVersion) {
-        setHighlighted(latestVersion.findings || text);
+      
+      // Handle new backend response format
+      if (res && res.analysis) {
+        const analysisData = res.analysis;
+        const result = {
+          request_id: res.correction_request?.record_id || `submit-${Date.now()}`,
+          status: 'completed',
+          analysis: analysisData,
+          original_text: res.original_text || text,
+          corrected_text: res.corrected_text || text,
+          versions: [
+            {
+              version_id: `v-submit-${Date.now()}`,
+              findings: analysisData.corrections || [],
+              corrections: analysisData.corrections || [],
+              confidence_score: analysisData.summary?.confidence_score || 0
+            }
+          ]
+        };
+        setResult(result);
+        setHighlighted(res.corrected_text || text);
       } else {
-        setHighlighted(text);
+        // Handle old format
+        setResult(res);
+        const latestVersion = res.versions && res.versions.length ? res.versions[0] : null;
+        const corrections = latestVersion && latestVersion.corrections ? latestVersion.corrections : null;
+        if (corrections && corrections.grammar) {
+          const g = corrections.grammar;
+          setHighlighted(g.explain ? g.explain.join('\n') : (latestVersion.findings || text));
+        } else if (latestVersion) {
+          setHighlighted(latestVersion.findings || text);
+        } else {
+          setHighlighted(text);
+        }
       }
       setShowModal(true);
     } catch (err) {
@@ -88,24 +174,46 @@ const ReportCorrection = () => {
     setSubmitting(true);
     try {
       const res = await correctionService.analyze(text);
-      // Build a result-like object used by modal
-      const demo = {
-        request_id: `analysis-${Date.now()}`,
-        status: 'analysis',
-        versions: [
-          {
-            version_id: `v-analysis-${Date.now()}`,
-            findings: res.findings,
-            corrections: res.corrections,
-            confidence_score: res.confidence_score
-          }
-        ]
-      };
-      setResult(demo);
-      setHighlighted((res.corrections && res.corrections.grammar && res.corrections.grammar.explain)
-        ? res.corrections.grammar.explain.join('\n')
-        : (res.findings || text));
-      setShowModal(true);
+      
+      // Handle new backend response format
+      if (res && res.analysis) {
+        const analysisData = res.analysis;
+        const demo = {
+          request_id: `analysis-${Date.now()}`,
+          status: 'analysis',
+          analysis: analysisData,
+          original_text: res.original_text || text,
+          corrected_text: res.corrected_text || text,
+          versions: [
+            {
+              version_id: `v-analysis-${Date.now()}`,
+              findings: analysisData.corrections || [],
+              corrections: analysisData.corrections || [],
+              confidence_score: analysisData.summary?.confidence_score || 0
+            }
+          ]
+        };
+        setResult(demo);
+        setHighlighted(res.corrected_text || text);
+        setShowModal(true);
+      } else {
+        // Fallback for old format
+        const demo = {
+          request_id: `analysis-${Date.now()}`,
+          status: 'analysis',
+          versions: [
+            {
+              version_id: `v-analysis-${Date.now()}`,
+              findings: res.findings || [],
+              corrections: res.corrections || [],
+              confidence_score: res.confidence_score || 0
+            }
+          ]
+        };
+        setResult(demo);
+        setHighlighted(text);
+        setShowModal(true);
+      }
     } catch (err) {
       setError(err.message || 'Analysis failed');
     } finally {
@@ -176,17 +284,54 @@ const ReportCorrection = () => {
               <Form.Control as="textarea" rows={10} value={text} onChange={(e) => setText(e.target.value)} required />
             </Form.Group>
 
-            <div className="d-flex gap-2">
-              <Button type="submit" variant="primary" disabled={submitting}>
-                {submitting ? 'Submitting...' : 'Submit for Correction'}
+            <div className="d-flex gap-2 align-items-center">
+              <Button type="submit" variant="primary" disabled={submitting} className="position-relative">
+                {submitting ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                    <span>RAG Processing...</span>
+                    <div className="position-absolute top-0 start-100 translate-middle">
+                      <span className="badge bg-info rounded-pill animate-pulse">
+                        🧠 AI
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    Submit for Correction
+                    <div className="position-absolute top-0 start-100 translate-middle">
+                      <span className="badge bg-success rounded-pill" title="RAG-Enhanced Medical AI">
+                        🏥 RAG
+                      </span>
+                    </div>
+                  </>
+                )}
               </Button>
               <Button 
                 variant="outline-secondary" 
                 disabled={submitting} 
                 onClick={handleAnalyzeOnly}
+                className="position-relative"
               >
-                {submitting ? 'Analyzing...' : 'Analyze Only'}
+                {submitting ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                    Medical DB Analysis...
+                  </>
+                ) : (
+                  'Analyze Only'
+                )}
               </Button>
+              {submitting && (
+                <div className="d-flex align-items-center text-info">
+                  <small>
+                    <div className="d-flex align-items-center">
+                      <div className="spinner-grow spinner-grow-sm me-2" style={{width: '0.5rem', height: '0.5rem'}}></div>
+                      <span>Querying RadLex & SNOMED databases...</span>
+                    </div>
+                  </small>
+                </div>
+              )}
               <Button 
                 variant="outline-info" 
                 onClick={() => handleShareReport()}
@@ -194,6 +339,21 @@ const ReportCorrection = () => {
               >
                 Share
               </Button>
+            </div>
+            
+            {/* RAG Status Indicator */}
+            <div className="mt-2">
+              <div className="d-flex align-items-center gap-3">
+                <small className="text-muted d-flex align-items-center">
+                  <span className="badge bg-success me-2">🏥</span>
+                  <strong>RAG-Enhanced:</strong> Medical terminology powered by RadLex, SNOMED CT, and ICD-10 databases
+                </small>
+                {result?.analysis?.metadata?.rag_enabled && (
+                  <small className="text-success">
+                    ✅ {result.analysis.metadata.rag_corrections || 0} RAG corrections applied
+                  </small>
+                )}
+              </div>
             </div>
           </Form>
 

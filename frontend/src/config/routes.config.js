@@ -29,7 +29,7 @@ const routesConfig = {
 
   // Dashboard Routes
   dashboard: {
-    home: '/',
+    home: '/dashboard',
     dummy: '/dashboard/dummy',
     hospital1: '/dashboard-pages/dashboard-1',
     hospital2: '/dashboard-pages/dashboard-2',

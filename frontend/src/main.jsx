@@ -18,6 +18,7 @@ import './assets/custom/custom.scss'
 import './assets/vendor/font-awesome/css/font-awesome.min.css'
 import './assets/vendor/remixicon/fonts/remixicon.css'
 import './assets/vendor/phosphor-icons/Fonts/regular/style.css'
+import './styles/icons.css'
 import './assets/vendor/phosphor-icons/Fonts/duotone/style.css'
 import './assets/vendor/phosphor-icons/Fonts/fill/style.css' 
 
