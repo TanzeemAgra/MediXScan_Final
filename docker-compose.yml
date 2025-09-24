@@ -8,16 +8,8 @@ services:
       - "8000:8000"
     volumes:
       - ./backend:/app
-    environment:
-      - DEBUG=True
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/medixscan
-      - SECRET_KEY=local-dev-secret-key-not-for-production
-      - JWT_SECRET_KEY=local-jwt-secret-key
-      - JWT_ACCESS_TOKEN_LIFETIME=30
-      - JWT_REFRESH_TOKEN_LIFETIME=7
-      - ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
-      - CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
-      - OPENAI_API_KEY=asa
+    env_file:
+      - .env
     depends_on:
       - db
     restart: unless-stopped
