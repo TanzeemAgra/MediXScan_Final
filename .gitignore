@@ -170,6 +170,10 @@ docs/_build/
 site/
 .venv/
 
+# 🔄 Separate Git Repositories
+# Frontend is managed as separate repository: https://github.com/TanzeemAgra/MediXScan_Frontend.git
+frontend/
+
 # ⚠️ NEVER COMMIT THESE PATTERNS
 *password*
 *secret*
