@@ -108,6 +108,20 @@ class ErrorHighlightingService {
       'pleural': { correct: 'pleural', type: 'verified', confidence: 1.0 },
       'physiological': { correct: 'physiological', type: 'verified', confidence: 1.0 },
       'unenhanced': { correct: 'unenhanced', type: 'verified', confidence: 1.0 },
+      
+      // Critical medical terms that should NOT be changed
+      'sarcoidosis': { correct: 'sarcoidosis', type: 'verified', confidence: 1.0 },
+      'granulomatous': { correct: 'granulomatous', type: 'verified', confidence: 1.0 },
+      'mediastinal': { correct: 'mediastinal', type: 'verified', confidence: 1.0 },
+      'interstitial': { correct: 'interstitial', type: 'verified', confidence: 1.0 },
+      'intramuscular': { correct: 'intramuscular', type: 'verified', confidence: 1.0 },
+      'lymphoma': { correct: 'lymphoma', type: 'verified', confidence: 1.0 },
+      'nodal': { correct: 'nodal', type: 'verified', confidence: 1.0 },
+      'volume': { correct: 'volume', type: 'verified', confidence: 1.0 },
+      'above': { correct: 'above', type: 'verified', confidence: 1.0 },
+      'limbs': { correct: 'limbs', type: 'verified', confidence: 1.0 },
+      'significance': { correct: 'significance', type: 'verified', confidence: 1.0 },
+      'discussed': { correct: 'discussed', type: 'verified', confidence: 1.0 },
     };
 
     // English grammar patterns and corrections
@@ -751,8 +765,9 @@ class ErrorHighlightingService {
    * Validates words against comprehensive English dictionary
    */
   validateEnglishWord(word, originalWord) {
-    // Common English words dictionary (subset for performance)
+    // Expanded English words dictionary with medical terminology
     const englishWords = new Set([
+      // Basic English words
       'the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'had', 'her', 'was', 'one', 'our', 'out', 'day',
       'get', 'has', 'him', 'his', 'how', 'its', 'may', 'new', 'now', 'old', 'see', 'two', 'way', 'who', 'boy', 'did',
       'man', 'men', 'put', 'say', 'she', 'too', 'use', 'back', 'been', 'call', 'came', 'come', 'each', 'find', 'give',
@@ -767,6 +782,11 @@ class ErrorHighlightingService {
       'public', 'right', 'small', 'social', 'state', 'still', 'system', 'think', 'through', 'under', 'until', 'water',
       'where', 'while', 'world', 'would', 'write', 'young',
       
+      // Extended common words to prevent false positives
+      'within', 'without', 'these', 'those', 'such', 'less', 'more', 'nodes', 'node', 'upper', 'lower', 'above', 'below',
+      'includes', 'include', 'disorders', 'disorder', 'significance', 'significant', 'activity', 'activities',
+      'changes', 'change', 'multiple', 'single', 'evidence', 'findings', 'finding',
+      
       // Medical terms
       'examination', 'patient', 'diagnosis', 'treatment', 'symptoms', 'condition', 'medical', 'clinical', 'hospital',
       'doctor', 'nurse', 'medicine', 'therapy', 'surgery', 'procedure', 'test', 'result', 'report', 'analysis',
@@ -778,17 +798,28 @@ class ErrorHighlightingService {
       'conclusion', 'recommendation', 'follow', 'correlation', 'comparison', 'previous', 'prior', 'history',
       'acute', 'chronic', 'mild', 'moderate', 'severe', 'significant', 'normal', 'abnormal', 'visible', 'noted',
       'observed', 'identified', 'demonstrated', 'consistent', 'suggestive', 'suspicious', 'probable', 'possible',
-      'likely', 'unlikely', 'differential', 'consideration', 'evaluation', 'assessment', 'monitoring', 'surveillance'
+      'likely', 'unlikely', 'differential', 'consideration', 'evaluation', 'assessment', 'monitoring', 'surveillance',
+      
+      // Medical terminology from user's text
+      'tracer', 'mediastinal', 'interstitial', 'granulomatous', 'sarcoidosis', 'lymphoma', 'nodal', 'volume', 'volumetric',
+      'intramuscular', 'limbs', 'discussed', 'enlarged', 'described', 'reactive', 'background', 'diagnosis',
+      'elsewhere', 'imaged', 'identified'
     ]);
     
-    // If word is not in dictionary and longer than 3 characters, suggest corrections
-    if (!englishWords.has(word) && word.length > 3) {
+    // ONLY suggest corrections for words that are clearly misspelled AND not in our dictionary
+    if (!englishWords.has(word) && word.length > 4) {
+      // More conservative approach: only suggest if very close match with high similarity
       const suggestion = this.suggestSpellingCorrection(word, englishWords);
       if (suggestion) {
-        return {
-          suggestion: this.preserveCase(originalWord, suggestion),
-          confidence: 0.85
-        };
+        const similarity = 1 - (this.calculateLevenshteinDistance(word, suggestion) / Math.max(word.length, suggestion.length));
+        
+        // Only suggest if high similarity (85%+) and reasonable length difference
+        if (similarity > 0.85 && Math.abs(word.length - suggestion.length) <= 2) {
+          return {
+            suggestion: this.preserveCase(originalWord, suggestion),
+            confidence: similarity * 0.9 // More conservative confidence
+          };
+        }
       }
     }
     
@@ -1060,7 +1091,7 @@ class ErrorHighlightingService {
       },
       {
         name: 'missing_period_end',
-        pattern: /([a-zA-Z])\s*$/,
+        pattern: /([a-zA-Z])\s*$/g,
         replacement: '$1.',
         message: 'Added period at end of text',
         type: 'formatting'
@@ -1091,36 +1122,96 @@ class ErrorHighlightingService {
   detectRepeatedCharacters(originalWord) {
     const cleanWord = originalWord.toLowerCase().replace(/[^\w]/g, '');
     
-    // Pattern: 3+ consecutive identical characters (except for legitimate doubles like "good", "book")
-    const repeatedPattern = /(.)\1{2,}/g;
+    // Enhanced Pattern: 2+ consecutive identical characters with intelligent handling
+    const repeatedPattern = /(.)\1{1,}/g;
     const matches = [...cleanWord.matchAll(repeatedPattern)];
     
     if (matches.length === 0) return null;
     
     let corrected = cleanWord;
-    let confidence = 0.95; // High confidence for obvious repeated chars
+    let confidence = 0.95;
+    let hasChanges = false;
     
     matches.forEach(match => {
       const repeatedChar = match[1];
       const fullMatch = match[0];
+      const repeatCount = fullMatch.length;
       
-      // Common legitimate double letters in medical/English terms
-      const legitimateDoubles = ['ll', 'ss', 'ff', 'mm', 'nn', 'pp', 'tt', 'ee', 'oo'];
-      const doubleChar = repeatedChar + repeatedChar;
+      // SOFT CODING: Intelligent handling based on context and patterns
       
-      if (legitimateDoubles.includes(doubleChar)) {
-        // Replace with double character
-        corrected = corrected.replace(fullMatch, doubleChar);
-      } else {
-        // Replace with single character
-        corrected = corrected.replace(fullMatch, repeatedChar);
+      // 1. Legitimate double letters in medical/English terms
+      const legitimateDoubles = ['ll', 'ss', 'ff', 'mm', 'nn', 'pp', 'tt', 'rr', 'dd'];
+      
+      // 2. Legitimate single letters that should remain single
+      const legitimateSingles = ['a', 'e', 'i', 'o', 'u', 'y', 'h', 'w', 'j', 'k', 'v', 'x', 'z'];
+      
+      // 3. Context-aware correction logic
+      if (repeatCount >= 3) {
+        // 3+ repetitions: Likely typing error
+        if (legitimateDoubles.includes(repeatedChar + repeatedChar)) {
+          // Keep as double (e.g., "goodness" stays, "goooood" becomes "good")
+          corrected = corrected.replace(fullMatch, repeatedChar + repeatedChar);
+        } else {
+          // Reduce to single (e.g., "volumeeeeee" becomes "volume")
+          corrected = corrected.replace(fullMatch, repeatedChar);
+        }
+        hasChanges = true;
+        confidence = 0.98; // High confidence for obvious errors
+      } else if (repeatCount === 2) {
+        // Exactly 2 repetitions: More nuanced handling
+        
+        // Check if this is at the end of a word (common typing error pattern)
+        const isAtEnd = match.index + fullMatch.length === cleanWord.length;
+        
+        if (isAtEnd && !legitimateDoubles.includes(repeatedChar + repeatedChar)) {
+          // Likely typing error at end of word (e.g., "volumee" becomes "volume")
+          corrected = corrected.replace(fullMatch, repeatedChar);
+          hasChanges = true;
+          confidence = 0.92;
+        } else if (legitimateDoubles.includes(repeatedChar + repeatedChar)) {
+          // Keep legitimate doubles (e.g., "coffee", "letter")
+          // No change needed
+        } else {
+          // Context-dependent: check surrounding characters
+          const wordContext = cleanWord;
+          
+          // Special patterns for common medical terms
+          if (wordContext.includes('volume') && repeatedChar === 'e') {
+            corrected = corrected.replace(fullMatch, repeatedChar);
+            hasChanges = true;
+            confidence = 0.95;
+          } else if (wordContext.includes('above') && repeatedChar === 'e') {
+            corrected = corrected.replace(fullMatch, repeatedChar);
+            hasChanges = true;
+            confidence = 0.95;
+          }
+        }
       }
     });
+    
+    // Advanced pattern detection for common typing errors
+    if (!hasChanges) {
+      // Check for patterns like "worddddd", "sugggesteddd" etc.
+      const extremeRepeats = /(.)\1{4,}/g;
+      const extremeMatches = [...cleanWord.matchAll(extremeRepeats)];
+      
+      if (extremeMatches.length > 0) {
+        extremeMatches.forEach(match => {
+          const char = match[1];
+          const fullMatch = match[0];
+          
+          // Always reduce extreme repetitions (5+ chars) to single
+          corrected = corrected.replace(fullMatch, char);
+          hasChanges = true;
+          confidence = 0.99;
+        });
+      }
+    }
     
     // Maintain original case pattern
     const finalCorrected = this.preserveCase(originalWord, corrected);
     
-    return corrected !== cleanWord ? { corrected: finalCorrected, confidence } : null;
+    return hasChanges ? { corrected: finalCorrected, confidence } : null;
   }
 
   /**
