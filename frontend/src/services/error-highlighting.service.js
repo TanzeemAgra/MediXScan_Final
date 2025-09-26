@@ -122,6 +122,30 @@ class ErrorHighlightingService {
       'limbs': { correct: 'limbs', type: 'verified', confidence: 1.0 },
       'significance': { correct: 'significance', type: 'verified', confidence: 1.0 },
       'discussed': { correct: 'discussed', type: 'verified', confidence: 1.0 },
+      
+      // Radiology and imaging terms that should NOT be changed
+      'photopenic': { correct: 'photopenic', type: 'verified', confidence: 1.0 },
+      'assessment': { correct: 'assessment', type: 'verified', confidence: 1.0 },
+      'Assessment': { correct: 'Assessment', type: 'verified', confidence: 1.0 },
+      'bladder': { correct: 'bladder', type: 'verified', confidence: 1.0 },
+      'malignancy': { correct: 'malignancy', type: 'verified', confidence: 1.0 },
+      'feasible': { correct: 'feasible', type: 'verified', confidence: 1.0 },
+      'urinary': { correct: 'urinary', type: 'verified', confidence: 1.0 },
+      'locoregional': { correct: 'locoregional', type: 'verified', confidence: 1.0 },
+      'deposits': { correct: 'deposits', type: 'verified', confidence: 1.0 },
+      'posterior': { correct: 'posterior', type: 'verified', confidence: 1.0 },
+      'aortic': { correct: 'aortic', type: 'verified', confidence: 1.0 },
+      'adjacent': { correct: 'adjacent', type: 'verified', confidence: 1.0 },
+      'arch': { correct: 'arch', type: 'verified', confidence: 1.0 },
+      'unlikely': { correct: 'unlikely', type: 'verified', confidence: 1.0 },
+      'represent': { correct: 'represent', type: 'verified', confidence: 1.0 },
+      'metastases': { correct: 'metastases', type: 'verified', confidence: 1.0 },
+      'benign': { correct: 'benign', type: 'verified', confidence: 1.0 },
+      'indeterminate': { correct: 'indeterminate', type: 'verified', confidence: 1.0 },
+      'reviewed': { correct: 'reviewed', type: 'verified', confidence: 1.0 },
+      'imaging': { correct: 'imaging', type: 'verified', confidence: 1.0 },
+      'convincing': { correct: 'convincing', type: 'verified', confidence: 1.0 },
+      'distant': { correct: 'distant', type: 'verified', confidence: 1.0 },
     };
 
     // English grammar patterns and corrections
@@ -219,16 +243,18 @@ class ErrorHighlightingService {
     
     // Apply spelling corrections
     spellingErrors.forEach(error => {
-      const regex = new RegExp('\\b' + this.escapeRegExp(error.original) + '\\b', 'gi');
-      correctedText = correctedText.replace(regex, error.suggestion);
-      corrections.spelling.explain.push(error.message || `"${error.original}" → "${error.suggestion}"`);
-      highlights.push({
-        original: error.original,
-        suggestion: error.suggestion,
-        type: error.type,
-        position: error.position,
-        confidence: error.confidence
-      });
+      if (error.original !== error.suggestion) { // Only apply if there's an actual change
+        const regex = new RegExp('\\b' + this.escapeRegExp(error.original) + '\\b', 'gi');
+        correctedText = correctedText.replace(regex, error.suggestion);
+        corrections.spelling.explain.push(error.message || `"${error.original}" → "${error.suggestion}"`);
+        highlights.push({
+          original: error.original,
+          suggestion: error.suggestion,
+          type: error.type,
+          position: error.position,
+          confidence: error.confidence
+        });
+      }
     });
 
     // PHASE 2: ADVANCED GRAMMAR ANALYSIS  
@@ -238,19 +264,21 @@ class ErrorHighlightingService {
     
     // Apply grammar corrections
     grammarErrors.forEach(error => {
-      if (error.transform) {
-        correctedText = correctedText.replace(error.pattern, error.transform);
-      } else if (error.replacement) {
-        correctedText = correctedText.replace(error.pattern, error.replacement);
+      if (error.original !== (error.suggestion || error.replacement)) { // Only apply if there's an actual change
+        if (error.transform) {
+          correctedText = correctedText.replace(error.pattern, error.transform);
+        } else if (error.replacement) {
+          correctedText = correctedText.replace(error.pattern, error.replacement);
+        }
+        corrections.grammar.explain.push(error.message);
+        highlights.push({
+          original: error.original,
+          suggestion: error.suggestion || error.replacement,
+          type: error.type,
+          position: error.position,
+          confidence: error.confidence
+        });
       }
-      corrections.grammar.explain.push(error.message);
-      highlights.push({
-        original: error.original,
-        suggestion: error.suggestion || error.replacement,
-        type: error.type,
-        position: error.position,
-        confidence: error.confidence
-      });
     });
 
     // PHASE 3: MEDICAL TERMINOLOGY VALIDATION (RAG-Enhanced)
@@ -260,16 +288,18 @@ class ErrorHighlightingService {
     
     // Apply medical corrections
     medicalErrors.forEach(error => {
-      const regex = new RegExp('\\b' + this.escapeRegExp(error.original) + '\\b', 'gi');
-      correctedText = correctedText.replace(regex, error.suggestion);
-      corrections.medical.explain.push(error.message);
-      highlights.push({
-        original: error.original,
-        suggestion: error.suggestion,
-        type: error.type,
-        position: error.position,
-        confidence: error.confidence
-      });
+      if (error.original !== error.suggestion) { // Only apply if there's an actual change
+        const regex = new RegExp('\\b' + this.escapeRegExp(error.original) + '\\b', 'gi');
+        correctedText = correctedText.replace(regex, error.suggestion);
+        corrections.medical.explain.push(error.message);
+        highlights.push({
+          original: error.original,
+          suggestion: error.suggestion,
+          type: error.type,
+          position: error.position,
+          confidence: error.confidence
+        });
+      }
     });
 
     // PHASE 4: PROFESSIONAL FORMATTING ANALYSIS
@@ -877,7 +907,7 @@ class ErrorHighlightingService {
       
       // Check multi-word medical terms first
       const fullMatch = this.findMedicalMatch(text, index, words);
-      if (fullMatch) {
+      if (fullMatch && fullMatch.original !== fullMatch.suggestion) {
         errors.push({
           original: fullMatch.original,
           suggestion: fullMatch.suggestion,
@@ -892,14 +922,17 @@ class ErrorHighlightingService {
       // Check for medical terms in our comprehensive dictionary
       if (this.medicalTerms[cleanWord]) {
         const term = this.medicalTerms[cleanWord];
-        errors.push({
-          original: cleanWord,
-          suggestion: term.correct,
-          type: term.type,
-          confidence: term.confidence,
-          position: { start: index, end: index },
-          message: `Medical ${term.type}: "${cleanWord}" → "${term.correct}"`
-        });
+        // Only add as error if there's an actual correction needed
+        if (cleanWord !== term.correct.toLowerCase()) {
+          errors.push({
+            original: cleanWord,
+            suggestion: term.correct,
+            type: term.type,
+            confidence: term.confidence,
+            position: { start: index, end: index },
+            message: `Medical ${term.type}: "${cleanWord}" → "${term.correct}"`
+          });
+        }
       }
     });
 
