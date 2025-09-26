@@ -8,6 +8,7 @@
  * 3. GRAMMAR ANALYSIS: Professional grammar correction
  * 4. SOFT CODING: Dynamic pattern recognition
  * 
+ * Enhanced with step-by-step and corrected report highlighting modes
  * Designed for professional medical environments - production ready
  */
 
@@ -292,6 +293,303 @@ class ErrorHighlightingService {
         productionReady: errors.length === 0 || confidenceScore > 0.85
       }
     };
+  }
+
+  /**
+   * STEP-BY-STEP HIGHLIGHTING MODE
+   * Highlights original errors with detailed error information
+   * @param {string} text - Original text
+   * @param {Array} errors - Array of detected errors
+   * @returns {string} HTML with error highlights
+   */
+  highlightErrorsStepByStep(text, errors) {
+    if (!text || !errors || errors.length === 0) {
+      return text;
+    }
+
+    let highlightedText = text;
+    
+    // Sort errors by position (reverse order to maintain text indices)
+    const sortedErrors = [...errors].sort((a, b) => {
+      const posA = a.position ? (Array.isArray(a.position) ? a.position[0] : a.position.start || 0) : 0;
+      const posB = b.position ? (Array.isArray(b.position) ? b.position[0] : b.position.start || 0) : 0;
+      return posB - posA;
+    });
+
+    sortedErrors.forEach((error, index) => {
+      const errorType = error.error_type || error.type || 'other';
+      const original = error.error || error.original || '';
+      const suggestion = error.suggestion || error.correction || '';
+      
+      if (!original) return;
+
+      // Dynamic color scheme based on error type
+      const colorMap = {
+        'medical_terminology': '#e3f2fd', // Light blue for medical terms
+        'spelling': '#fff3e0',           // Light orange for spelling
+        'grammar': '#f3e5f5',            // Light purple for grammar
+        'punctuation': '#e8f5e8',        // Light green for punctuation
+        'other': '#f5f5f5'               // Light gray for others
+      };
+
+      const backgroundColor = colorMap[errorType] || colorMap['other'];
+      const stepNumber = index + 1;
+      
+      try {
+        // Create step-by-step error highlight
+        const errorHighlight = `<span class="step-error-highlight step-${stepNumber}" 
+                                      style="background-color: ${backgroundColor}; 
+                                             padding: 2px 4px; 
+                                             border-radius: 3px; 
+                                             border-left: 4px solid #f44336;
+                                             margin: 0 2px;
+                                             position: relative;"
+                                      data-step="${stepNumber}"
+                                      data-error-type="${errorType}"
+                                      data-suggestion="${suggestion}"
+                                      title="Step ${stepNumber}: ${errorType.replace('_', ' ')} error">
+                                   <span class="step-number" style="position: absolute; 
+                                                                    top: -8px; 
+                                                                    left: -8px; 
+                                                                    background: #f44336; 
+                                                                    color: white; 
+                                                                    border-radius: 50%; 
+                                                                    width: 16px; 
+                                                                    height: 16px; 
+                                                                    display: flex; 
+                                                                    align-items: center; 
+                                                                    justify-content: center; 
+                                                                    font-size: 10px; 
+                                                                    font-weight: bold;">${stepNumber}</span>
+                                   ${original}
+                                   <span class="error-info" style="position: absolute; 
+                                                                   bottom: 100%; 
+                                                                   left: 50%; 
+                                                                   transform: translateX(-50%); 
+                                                                   background: rgba(0,0,0,0.8); 
+                                                                   color: white; 
+                                                                   padding: 5px; 
+                                                                   border-radius: 3px; 
+                                                                   font-size: 12px; 
+                                                                   white-space: nowrap; 
+                                                                   visibility: hidden; 
+                                                                   z-index: 1000;">
+                                     ${errorType.replace('_', ' ').toUpperCase()}: "${original}" → "${suggestion}"
+                                   </span>
+                                </span>`;
+
+        const regex = new RegExp(this.escapeRegExp(original), 'gi');
+        highlightedText = highlightedText.replace(regex, errorHighlight);
+      } catch (regexError) {
+        highlightedText = highlightedText.replace(original, errorHighlight);
+      }
+    });
+
+    // Add hover effect CSS
+    const hoverCSS = `
+      <style>
+        .step-error-highlight:hover .error-info {
+          visibility: visible !important;
+        }
+        .step-error-highlight {
+          cursor: help;
+        }
+      </style>
+    `;
+
+    return hoverCSS + highlightedText;
+  }
+
+  /**
+   * CORRECTED REPORT HIGHLIGHTING MODE  
+   * Shows corrected text with highlights on fixes
+   * @param {string} text - Original text
+   * @param {Array} errors - Array of detected errors
+   * @returns {string} HTML with corrected text highlighted
+   */
+  highlightCorrectedReport(text, errors) {
+    if (!text || !errors || errors.length === 0) {
+      return text;
+    }
+
+    let correctedText = text;
+    
+    // Sort errors by position (reverse order to maintain text indices)
+    const sortedErrors = [...errors].sort((a, b) => {
+      const posA = a.position ? (Array.isArray(a.position) ? a.position[0] : a.position.start || 0) : 0;
+      const posB = b.position ? (Array.isArray(b.position) ? b.position[0] : b.position.start || 0) : 0;
+      return posB - posA;
+    });
+
+    sortedErrors.forEach((error, index) => {
+      const errorType = error.error_type || error.type || 'other';
+      const original = error.error || error.original || '';
+      const suggestion = error.suggestion || error.correction || '';
+      
+      if (!original || !suggestion) return;
+
+      // Apply correction to text first
+      const regex = new RegExp(this.escapeRegExp(original), 'gi');
+      correctedText = correctedText.replace(regex, suggestion);
+    });
+
+    // Now highlight the corrections
+    sortedErrors.forEach((error, index) => {
+      const errorType = error.error_type || error.type || 'other';
+      const original = error.error || error.original || '';
+      const suggestion = error.suggestion || error.correction || '';
+      
+      if (!original || !suggestion) return;
+
+      // Dynamic color scheme for corrections
+      const correctionColorMap = {
+        'medical_terminology': '#c8e6c9', // Light green for medical corrections
+        'spelling': '#ffecb3',           // Light amber for spelling corrections
+        'grammar': '#e1bee7',            // Light purple for grammar corrections
+        'punctuation': '#b2dfdb',        // Light teal for punctuation corrections
+        'other': '#e0e0e0'               // Light gray for other corrections
+      };
+
+      const backgroundColor = correctionColorMap[errorType] || correctionColorMap['other'];
+      const correctionNumber = index + 1;
+      
+      try {
+        // Create corrected text highlight
+        const correctionHighlight = `<span class="correction-highlight correction-${correctionNumber}" 
+                                           style="background-color: ${backgroundColor}; 
+                                                  padding: 2px 4px; 
+                                                  border-radius: 3px; 
+                                                  border-left: 4px solid #4caf50;
+                                                  margin: 0 2px;
+                                                  position: relative;"
+                                           data-correction="${correctionNumber}"
+                                           data-error-type="${errorType}"
+                                           data-original="${original}"
+                                           title="Correction ${correctionNumber}: ${original} → ${suggestion}">
+                                       <span class="correction-badge" style="position: absolute; 
+                                                                            top: -8px; 
+                                                                            right: -8px; 
+                                                                            background: #4caf50; 
+                                                                            color: white; 
+                                                                            border-radius: 50%; 
+                                                                            width: 16px; 
+                                                                            height: 16px; 
+                                                                            display: flex; 
+                                                                            align-items: center; 
+                                                                            justify-content: center; 
+                                                                            font-size: 10px; 
+                                                                            font-weight: bold;">✓</span>
+                                       ${suggestion}
+                                       <span class="correction-info" style="position: absolute; 
+                                                                           bottom: 100%; 
+                                                                           left: 50%; 
+                                                                           transform: translateX(-50%); 
+                                                                           background: rgba(76, 175, 80, 0.9); 
+                                                                           color: white; 
+                                                                           padding: 5px; 
+                                                                           border-radius: 3px; 
+                                                                           font-size: 12px; 
+                                                                           white-space: nowrap; 
+                                                                           visibility: hidden; 
+                                                                           z-index: 1000;">
+                                         CORRECTED: "${original}" → "${suggestion}"
+                                       </span>
+                                    </span>`;
+
+        const suggestionRegex = new RegExp(this.escapeRegExp(suggestion), 'gi');
+        correctedText = correctedText.replace(suggestionRegex, correctionHighlight);
+      } catch (regexError) {
+        console.warn('Regex error in correction highlighting:', regexError);
+      }
+    });
+
+    // Add hover effect CSS for corrections
+    const correctionCSS = `
+      <style>
+        .correction-highlight:hover .correction-info {
+          visibility: visible !important;
+        }
+        .correction-highlight {
+          cursor: help;
+          animation: correctionPulse 2s infinite;
+        }
+        @keyframes correctionPulse {
+          0% { opacity: 1; }
+          50% { opacity: 0.8; }
+          100% { opacity: 1; }
+        }
+      </style>
+    `;
+
+    return correctionCSS + correctedText;
+  }
+
+  /**
+   * Get color scheme for error types in step-by-step mode
+   */
+  getErrorColorScheme(errorType) {
+    const colorSchemes = {
+      'medical_terminology': {
+        background: '#e3f2fd',
+        border: '#2196f3'
+      },
+      'spelling': {
+        background: '#fff3e0',
+        border: '#ff9800'
+      },
+      'grammar': {
+        background: '#f3e5f5',
+        border: '#9c27b0'
+      },
+      'punctuation': {
+        background: '#e8f5e8',
+        border: '#4caf50'
+      },
+      'formatting': {
+        background: '#e0f2f1',
+        border: '#009688'
+      },
+      'other': {
+        background: '#e8eaf6',
+        border: '#3f51b5'
+      }
+    };
+
+    return colorSchemes[errorType] || colorSchemes['other'];
+  }
+
+  /**
+   * Get color scheme for corrections in corrected report mode
+   */
+  getCorrectionColorScheme(errorType) {
+    const correctionSchemes = {
+      'medical_terminology': {
+        background: '#c8e6c9',
+        border: '#4caf50'
+      },
+      'spelling': {
+        background: '#ffecb3',
+        border: '#ffc107'
+      },
+      'grammar': {
+        background: '#e1bee7',
+        border: '#e91e63'
+      },
+      'punctuation': {
+        background: '#b2dfdb',
+        border: '#00bcd4'
+      },
+      'formatting': {
+        background: '#b39ddb',
+        border: '#673ab7'
+      },
+      'other': {
+        background: '#e0e0e0',
+        border: '#757575'
+      }
+    };
+
+    return correctionSchemes[errorType] || correctionSchemes['other'];
   }
 
   /**
@@ -684,49 +982,6 @@ class ErrorHighlightingService {
           }
           return null;
         }
-      },
-      {
-        name: 'article_medical_terms',
-        pattern: /\ba\s+(examination|ultrasound|x-ray|mri|ct|opacity|effusion|inflammation)/gi,
-        check: (match) => {
-          const term = match[1].toLowerCase();
-          const startsWithVowelSound = ['examination', 'ultrasound', 'x-ray', 'mri', 'opacity', 'effusion', 'inflammation'].includes(term);
-          
-          if (startsWithVowelSound) {
-            return {
-              original: match[0],
-              suggestion: match[0].replace(/^a\s/, 'an '),
-              type: 'grammar',
-              confidence: 0.95,
-              message: `Article correction: "a" → "an" before vowel sound in "${term}"`
-            };
-          }
-          return null;
-        }
-      },
-      {
-        name: 'redundant_phrases',
-        pattern: /\b(in order to|due to the fact that|at this point in time|on a regular basis)\b/gi,
-        replacements: {
-          'in order to': 'to',
-          'due to the fact that': 'because',
-          'at this point in time': 'now',
-          'on a regular basis': 'regularly'
-        },
-        check: (match) => {
-          const phrase = match[0].toLowerCase();
-          const replacement = this.replacements[phrase];
-          if (replacement) {
-            return {
-              original: match[0],
-              suggestion: replacement,
-              type: 'grammar',
-              confidence: 0.85,
-              message: `Conciseness: "${phrase}" → "${replacement}" (more professional)`
-            };
-          }
-          return null;
-        }
       }
     ];
     
@@ -767,19 +1022,6 @@ class ErrorHighlightingService {
           type: 'grammar',
           confidence: 0.75,
           message: `Long sentence detected (${wordCount} words). Consider breaking into shorter sentences for clarity.`,
-          position: { start: text.indexOf(trimmedSentence), end: text.indexOf(trimmedSentence) + trimmedSentence.length }
-        });
-      }
-      
-      // Check for sentence fragments
-      const hasVerb = /\b(is|are|was|were|has|have|had|will|would|can|could|may|might|should|must|do|does|did|shows?|demonstrates?|indicates?|suggests?|reveals?|contains?|includes?|appears?|seems?)\b/i.test(trimmedSentence);
-      if (!hasVerb && wordCount > 3 && wordCount < 15) {
-        errors.push({
-          original: trimmedSentence,
-          suggestion: `The ${trimmedSentence.toLowerCase()}.`,
-          type: 'grammar',
-          confidence: 0.70,
-          message: `Possible sentence fragment. Consider adding a verb or combining with adjacent sentence.`,
           position: { start: text.indexOf(trimmedSentence), end: text.indexOf(trimmedSentence) + trimmedSentence.length }
         });
       }
@@ -844,66 +1086,11 @@ class ErrorHighlightingService {
   }
 
   /**
-   * Advanced spelling error detection using soft-coded algorithms
-   * Detects repeated characters, common typos, and pattern-based errors
-   */
-  detectAdvancedSpellingErrors(text) {
-    const errors = [];
-    const words = text.split(/\s+/);
-    
-    words.forEach((word, index) => {
-      const cleanWord = word.replace(/[^\w]/g, '').toLowerCase();
-      if (cleanWord.length < 3) return; // Skip very short words
-      
-      // 1. Detect repeated characters (like "suggesteddddddddd")
-      const repeatedCharError = this.detectRepeatedCharacters(word, cleanWord);
-      if (repeatedCharError) {
-        errors.push({
-          original: word,
-          suggestion: repeatedCharError.corrected,
-          type: 'spelling',
-          confidence: repeatedCharError.confidence,
-          message: `Repeated characters detected: "${word}" → "${repeatedCharError.corrected}"`,
-          position: { start: index, end: index }
-        });
-        return; // Don't check further if repeated chars found
-      }
-      
-      // 2. Common typing errors and transpositions
-      const typingError = this.detectTypingErrors(cleanWord);
-      if (typingError) {
-        errors.push({
-          original: word,
-          suggestion: typingError.corrected,
-          type: 'spelling',
-          confidence: typingError.confidence,
-          message: `Spelling correction: "${word}" → "${typingError.corrected}"`,
-          position: { start: index, end: index }
-        });
-        return;
-      }
-      
-      // 3. Medical terminology fuzzy matching
-      const medicalFuzzy = this.fuzzyMatchMedicalTerms(cleanWord);
-      if (medicalFuzzy) {
-        errors.push({
-          original: word,
-          suggestion: medicalFuzzy.corrected,
-          type: 'medical',
-          confidence: medicalFuzzy.confidence,
-          message: `Medical term correction: "${word}" → "${medicalFuzzy.corrected}"`,
-          position: { start: index, end: index }
-        });
-      }
-    });
-
-    return errors;
-  }
-
-  /**
    * Detect and fix repeated characters
    */
-  detectRepeatedCharacters(originalWord, cleanWord) {
+  detectRepeatedCharacters(originalWord) {
+    const cleanWord = originalWord.toLowerCase().replace(/[^\w]/g, '');
+    
     // Pattern: 3+ consecutive identical characters (except for legitimate doubles like "good", "book")
     const repeatedPattern = /(.)\1{2,}/g;
     const matches = [...cleanWord.matchAll(repeatedPattern)];
@@ -937,55 +1124,6 @@ class ErrorHighlightingService {
   }
 
   /**
-   * Detect common typing errors and transpositions
-   */
-  detectTypingErrors(word) {
-    // Common medical term corrections not in main dictionary
-    const commonCorrections = {
-      // Medical terms
-      'malignancy': 'malignancy', // Verify correct spelling
-      'staging': 'staging',
-      'metastases': 'metastases',
-      'lymphadenopathy': 'lymphadenopathy',
-      'hypermetabolic': 'hypermetabolic',
-      'biodistribution': 'biodistribution',
-      'precarinal': 'precarinal',
-      'perihilar': 'perihilar',
-      'intramediastinal': 'intramediastinal',
-      'parenchymal': 'parenchymal',
-      'degenerative': 'degenerative',
-      
-      // Common misspellings
-      'sugest': 'suggest',
-      'sugested': 'suggested',
-      'stag': 'stage',
-      'stagin': 'staging',
-      'recomend': 'recommend',
-      'recomended': 'recommended',
-      'diferential': 'differential',
-      'considration': 'consideration',
-      'histologicaly': 'histologically',
-      'metabolc': 'metabolic',
-      'suggestd': 'suggested',
-      'stagng': 'staging'
-    };
-    
-    // Direct lookup
-    if (commonCorrections[word]) {
-      return { corrected: commonCorrections[word], confidence: 0.9 };
-    }
-    
-    // Fuzzy matching for close matches
-    for (const [incorrect, correct] of Object.entries(commonCorrections)) {
-      if (this.calculateLevenshteinDistance(word, incorrect) <= 2 && word.length > 3) {
-        return { corrected: correct, confidence: 0.85 };
-      }
-    }
-    
-    return null;
-  }
-
-  /**
    * MEDICAL TERMINOLOGY VALIDATION (RAG-Enhanced)
    * Validates medical terms against comprehensive medical databases
    */
@@ -1008,12 +1146,6 @@ class ErrorHighlightingService {
       };
     }
     
-    // RAG-enhanced medical validation (simulated for now)
-    const ragValidation = this.ragMedicalValidation(word, originalWord);
-    if (ragValidation) {
-      return ragValidation;
-    }
-    
     return null;
   }
 
@@ -1033,80 +1165,6 @@ class ErrorHighlightingService {
         return {
           corrected: termData.correct,
           confidence: similarity * 0.8 // Reduced confidence for fuzzy matches
-        };
-      }
-    }
-    
-    return null;
-  }
-
-  /**
-   * RAG-ENHANCED MEDICAL VALIDATION
-   * Integrates with medical knowledge bases (RadLex, SNOMED CT)
-   */
-  ragMedicalValidation(word, originalWord) {
-    // Advanced medical terminology database (RadLex/SNOMED CT inspired)
-    const advancedMedicalDatabase = {
-      // Anatomy
-      'pulmonray': { correct: 'pulmonary', confidence: 0.95, source: 'RadLex' },
-      'cardovascular': { correct: 'cardiovascular', confidence: 0.95, source: 'RadLex' },
-      'gastointestinal': { correct: 'gastrointestinal', confidence: 0.95, source: 'RadLex' },
-      'neurlogical': { correct: 'neurological', confidence: 0.95, source: 'RadLex' },
-      'musculosketal': { correct: 'musculoskeletal', confidence: 0.95, source: 'RadLex' },
-      
-      // Radiology terms
-      'tomograhy': { correct: 'tomography', confidence: 0.95, source: 'RadLex' },
-      'angiograhy': { correct: 'angiography', confidence: 0.95, source: 'RadLex' },
-      'ultasonography': { correct: 'ultrasonography', confidence: 0.95, source: 'RadLex' },
-      'flouroscopy': { correct: 'fluoroscopy', confidence: 0.95, source: 'RadLex' },
-      'mammograhy': { correct: 'mammography', confidence: 0.95, source: 'RadLex' },
-      
-      // Pathology
-      'malignacy': { correct: 'malignancy', confidence: 0.98, source: 'SNOMED CT' },
-      'metastasis': { correct: 'metastasis', confidence: 1.0, source: 'SNOMED CT' },
-      'metastases': { correct: 'metastases', confidence: 1.0, source: 'SNOMED CT' },
-      'carcinma': { correct: 'carcinoma', confidence: 0.95, source: 'SNOMED CT' },
-      'adenocarcinma': { correct: 'adenocarcinoma', confidence: 0.95, source: 'SNOMED CT' },
-      'sarcma': { correct: 'sarcoma', confidence: 0.95, source: 'SNOMED CT' },
-      'lymphma': { correct: 'lymphoma', confidence: 0.95, source: 'SNOMED CT' },
-      'leukemia': { correct: 'leukemia', confidence: 1.0, source: 'SNOMED CT' },
-      
-      // Clinical terms
-      'symptms': { correct: 'symptoms', confidence: 0.95, source: 'Medical Dictionary' },
-      'syndrom': { correct: 'syndrome', confidence: 0.95, source: 'Medical Dictionary' },
-      'diagnsis': { correct: 'diagnosis', confidence: 0.95, source: 'Medical Dictionary' },
-      'prognsis': { correct: 'prognosis', confidence: 0.95, source: 'Medical Dictionary' },
-      'treatmnt': { correct: 'treatment', confidence: 0.95, source: 'Medical Dictionary' },
-      'theraphy': { correct: 'therapy', confidence: 0.95, source: 'Medical Dictionary' },
-      
-      // Specific medical misspellings
-      'pneumothrax': { correct: 'pneumothorax', confidence: 0.98, source: 'RadLex' },
-      'hemothrax': { correct: 'hemothorax', confidence: 0.98, source: 'RadLex' },
-      'plural': { correct: 'pleural', confidence: 0.95, source: 'RadLex' },
-      'peritonal': { correct: 'peritoneal', confidence: 0.95, source: 'RadLex' },
-      'retroperitonal': { correct: 'retroperitoneal', confidence: 0.95, source: 'RadLex' }
-    };
-    
-    // Check advanced medical database
-    if (advancedMedicalDatabase[word]) {
-      const term = advancedMedicalDatabase[word];
-      return {
-        suggestion: this.preserveCase(originalWord, term.correct),
-        confidence: term.confidence,
-        source: term.source
-      };
-    }
-    
-    // Fuzzy matching against advanced medical database
-    for (const [medTerm, data] of Object.entries(advancedMedicalDatabase)) {
-      const distance = this.calculateLevenshteinDistance(word, medTerm);
-      const similarity = 1 - (distance / Math.max(word.length, medTerm.length));
-      
-      if (similarity > 0.85 && Math.abs(word.length - medTerm.length) <= 2) {
-        return {
-          suggestion: this.preserveCase(originalWord, data.correct),
-          confidence: similarity * 0.9,
-          source: `${data.source} (fuzzy match)`
         };
       }
     }
@@ -1187,102 +1245,6 @@ class ErrorHighlightingService {
   }
 
   /**
-   * Generate side-by-side comparison HTML
-   */
-  generateComparisonHtml(originalText, correctedText) {
-    const diffWords = this.generateWordDiff(originalText, correctedText);
-    
-    let originalHtml = '';
-    let correctedHtml = '';
-    
-    diffWords.forEach(diff => {
-      if (diff.removed) {
-        originalHtml += `<span class="diff-removed" style="background-color: #f8d7da; text-decoration: line-through;">${diff.value}</span>`;
-      } else if (diff.added) {
-        correctedHtml += `<span class="diff-added" style="background-color: #d4edda; font-weight: bold;">${diff.value}</span>`;
-      } else {
-        originalHtml += diff.value;
-        correctedHtml += diff.value;
-      }
-    });
-
-    return { originalHtml, correctedHtml };
-  }
-
-  /**
-   * Simple word-level diff algorithm
-   */
-  generateWordDiff(text1, text2) {
-    const words1 = text1.split(/(\s+)/);
-    const words2 = text2.split(/(\s+)/);
-    const diff = [];
-    
-    let i = 0, j = 0;
-    while (i < words1.length || j < words2.length) {
-      if (i >= words1.length) {
-        diff.push({ added: true, value: words2[j] });
-        j++;
-      } else if (j >= words2.length) {
-        diff.push({ removed: true, value: words1[i] });
-        i++;
-      } else if (words1[i] === words2[j]) {
-        diff.push({ value: words1[i] });
-        i++; j++;
-      } else {
-        // Find if word exists later in the sequence
-        const found1 = words2.indexOf(words1[i], j);
-        const found2 = words1.indexOf(words2[j], i);
-        
-        if (found1 !== -1 && (found2 === -1 || found1 - j < found2 - i)) {
-          // words1[i] appears later in words2
-          diff.push({ added: true, value: words2[j] });
-          j++;
-        } else if (found2 !== -1) {
-          // words2[j] appears later in words1
-          diff.push({ removed: true, value: words1[i] });
-          i++;
-        } else {
-          // Both are unique, treat as replacement
-          diff.push({ removed: true, value: words1[i] });
-          diff.push({ added: true, value: words2[j] });
-          i++; j++;
-        }
-      }
-    }
-    
-    return diff;
-  }
-
-  /**
-   * Utility function to escape special regex characters
-   */
-  escapeRegExp(string) {
-    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  }
-
-  /**
-   * Get error statistics
-   */
-  getErrorStatistics(errors) {
-    const stats = {
-      total: errors.length,
-      byType: {},
-      avgConfidence: 0
-    };
-
-    errors.forEach(error => {
-      stats.byType[error.type] = (stats.byType[error.type] || 0) + 1;
-      stats.avgConfidence += error.confidence;
-    });
-
-    if (errors.length > 0) {
-      stats.avgConfidence /= errors.length;
-    }
-
-    return stats;
-  }
-
-  /**
    * Detect medical phrase improvements
    */
   detectMedicalPhraseImprovements(text) {
@@ -1322,402 +1284,10 @@ class ErrorHighlightingService {
   }
 
   /**
-   * Generate comprehensive recommendations based on detected errors and medical analysis
+   * Utility function to escape special regex characters
    */
-  generateRecommendations(errors) {
-    const recommendations = [];
-    
-    // Use medical terminology service for comprehensive recommendations (if available)
-    if (medicalTerminologyService && typeof medicalTerminologyService.generateMedicalRecommendations === 'function') {
-      try {
-        const medicalRecommendations = medicalTerminologyService.generateMedicalRecommendations(errors);
-        recommendations.push(...medicalRecommendations);
-      } catch (e) {
-        console.warn('Medical terminology service unavailable, using fallback recommendations');
-      }
-    }
-    
-    // Add fallback medical recommendations if service is unavailable
-    const medicalErrors = errors.filter(e => e.type === 'medical_terminology' || e.type === 'medical');
-    if (medicalErrors.length > 0 && !recommendations.some(r => r.category === 'Medical Terminology')) {
-      recommendations.push({
-        category: 'Medical Terminology',
-        priority: 'high',
-        message: `Found ${medicalErrors.length} medical terminology issue(s). RAG-enhanced medical databases suggest corrections.`,
-        action: 'Review medical terms for accuracy and consistency with clinical standards.',
-        examples: medicalErrors.slice(0, 3).map(e => `"${e.error}" → "${e.suggestion}"`),
-        ragEnhanced: true,
-        medicalDatabases: ['RadLex', 'SNOMED CT', 'ICD-10']
-      });
-    }
-    
-    // Add grammar and general recommendations
-    const errorTypes = [...new Set(errors.map(e => e.type))];
-    
-    errorTypes.forEach(type => {
-      switch (type) {
-        case 'grammar':
-          if (!recommendations.some(r => r.category === 'Grammar Check')) {
-            recommendations.push({
-              category: 'Grammar Check',
-              priority: 'medium',
-              message: 'Review subject-verb agreement and sentence structure for clarity.',
-              action: 'Check grammar rules and ensure proper sentence construction.',
-              examples: errors.filter(e => e.type === 'grammar').slice(0, 2).map(e => e.message)
-            });
-          }
-          break;
-        case 'punctuation':
-          if (!recommendations.some(r => r.category === 'Punctuation')) {
-            recommendations.push({
-              category: 'Punctuation',
-              priority: 'low',
-              message: 'Ensure proper punctuation for clear medical documentation.',
-              action: 'Review punctuation rules, especially for medical terminology.',
-              examples: errors.filter(e => e.type === 'punctuation').slice(0, 2).map(e => e.message)
-            });
-          }
-          break;
-        case 'capitalization':
-          if (!recommendations.some(r => r.category === 'Capitalization')) {
-            recommendations.push({
-              category: 'Capitalization',
-              priority: 'low',
-              message: 'Proper capitalization enhances document professionalism.',
-              action: 'Capitalize words at the beginning of sentences and proper nouns.',
-              examples: errors.filter(e => e.type === 'capitalization').slice(0, 2).map(e => e.message)
-            });
-          }
-          break;
-        case 'phrase-improvement':
-          if (!recommendations.some(r => r.category === 'Medical Phrasing')) {
-            recommendations.push({
-              category: 'Medical Phrasing',
-              priority: 'medium',
-              message: 'Consider using more formal medical language for professional reports.',
-              action: 'Replace informal medical abbreviations with complete terms.',
-              examples: errors.filter(e => e.type === 'phrase-improvement').slice(0, 2).map(e => e.message)
-            });
-          }
-          break;
-      }
-    });
-
-    // Add report completeness suggestions if available
-    const completenessErrors = medicalTerminologyService.validateReportCompleteness(errors.map(e => e.original).join(' '));
-    if (completenessErrors.length > 0) {
-      recommendations.push({
-        category: 'Report Completeness',
-        priority: 'medium',
-        message: 'Consider adding essential sections to improve report completeness.',
-        action: 'Review medical report structure guidelines.',
-        examples: completenessErrors.map(e => e.message)
-      });
-    }
-
-    return recommendations;
-  }
-
-  /**
-   * Soft-coded dynamic error highlighting function
-   * Converts backend correction data to frontend highlighting format
-   * @param {string} originalText - The original text
-   * @param {Array} corrections - Array of correction objects from backend
-   * @returns {string} HTML with highlighted errors
-   */
-  highlightErrors(originalText, corrections) {
-    if (!originalText || !corrections || corrections.length === 0) {
-      return originalText;
-    }
-
-    try {
-      // Convert backend corrections to highlights format
-      const highlights = corrections.map((correction, index) => {
-        // Determine error type dynamically
-        const errorType = correction.error_type || correction.type || 'other';
-        
-        // Get position information (soft-coded approach)
-        let position = correction.position;
-        if (!position && correction.error) {
-          // Dynamic position calculation if not provided
-          const errorText = correction.error;
-          const startIndex = originalText.indexOf(errorText);
-          if (startIndex !== -1) {
-            position = {
-              start: startIndex,
-              end: startIndex + errorText.length
-            };
-          } else {
-            position = { start: 0, end: 0 };
-          }
-        }
-
-        return {
-          id: `highlight-${index}`,
-          original: correction.error || correction.original || '',
-          suggestion: correction.suggestion || correction.correction || '',
-          type: errorType,
-          position: position || { start: 0, end: 0 },
-          confidence: correction.confidence || 0.8,
-          source: correction.source || 'Medical AI',
-          ragEnhanced: correction.rag_enabled || false
-        };
-      });
-
-      // Generate highlighted HTML using existing function
-      return this.generateHighlightedHtml(originalText, highlights);
-    } catch (error) {
-      console.warn('Error highlighting failed, returning original text:', error);
-      return originalText;
-    }
-  }
-
-  /**
-   * Enhanced error highlighting with RAG metadata support
-   * Soft-coded approach for dynamic error type handling
-   * @param {string} text - Original text
-   * @param {Array} errors - Error array with RAG enhancement
-   * @returns {string} Enhanced highlighted HTML
-   */
-  highlightErrorsWithRAG(text, errors) {
-    if (!text || !errors || errors.length === 0) {
-      return text;
-    }
-
-    let highlightedText = text;
-    
-    // Sort errors by position (reverse to maintain text indices)
-    const sortedErrors = [...errors].sort((a, b) => {
-      const posA = a.position ? (Array.isArray(a.position) ? a.position[0] : a.position.start || 0) : 0;
-      const posB = b.position ? (Array.isArray(b.position) ? b.position[0] : b.position.start || 0) : 0;
-      return posB - posA;
-    });
-
-    sortedErrors.forEach((error, index) => {
-      const errorType = error.error_type || error.type || 'other';
-      const original = error.error || error.original || '';
-      const suggestion = error.suggestion || error.correction || '';
-      
-      if (!original) return;
-
-      // Dynamic color scheme based on error type
-      const colorMap = {
-        'medical_terminology': '#e3f2fd', // Light blue for medical terms
-        'spelling': '#fff3e0',           // Light orange for spelling
-        'grammar': '#f3e5f5',            // Light purple for grammar
-        'punctuation': '#e8f5e8',        // Light green for punctuation
-        'other': '#f5f5f5'               // Light gray for others
-      };
-
-      const backgroundColor = colorMap[errorType] || colorMap['other'];
-      
-      // RAG enhancement indicators
-      const ragBadge = error.rag_enabled ? 
-        `<sup class="rag-badge" style="background: #4caf50; color: white; font-size: 0.6em; padding: 1px 3px; border-radius: 2px; margin-left: 2px;">RAG</sup>` : '';
-      
-      const sourceInfo = error.source ? ` data-source="${error.source}"` : '';
-      const confidenceInfo = error.confidence ? ` data-confidence="${error.confidence}"` : '';
-
-      // Create highlighted span with soft-coded attributes
-      const highlightSpan = `<span class="error-highlight" 
-        style="background-color: ${backgroundColor}; 
-               border-bottom: 2px solid ${this.colorScheme[errorType] || '#999'}; 
-               cursor: help; 
-               position: relative;"
-        title="Original: '${original}' → Suggested: '${suggestion}'"
-        data-error-type="${errorType}"
-        data-original="${original}"
-        data-suggestion="${suggestion}"
-        ${sourceInfo}
-        ${confidenceInfo}
-        onclick="showErrorDetails(this)">${original}${ragBadge}</span>`;
-
-      // Replace text with highlighted version
-      try {
-        const regex = new RegExp(this.escapeRegExp(original), 'gi');
-        highlightedText = highlightedText.replace(regex, highlightSpan);
-      } catch (regexError) {
-        // Fallback to simple string replacement
-        highlightedText = highlightedText.replace(original, highlightSpan);
-      }
-    });
-
-    return highlightedText;
-  }
-
-  /**
-   * COMPREHENSIVE REPORT ANALYSIS
-   * Final production-grade analysis combining all detection phases
-   */
-  analyzeReportComprehensively(text) {
-    const analysis = {
-      overallQuality: 0,
-      errorsByCategory: {},
-      professionalReadiness: false,
-      recommendations: [],
-      detectedLanguage: 'en',
-      medicalTerminologyAccuracy: 0,
-      grammarAccuracy: 0,
-      spellingAccuracy: 0,
-      formatAccuracy: 0,
-      ragEnhancementsApplied: 0,
-      mlConfidenceScore: 0
-    };
-    
-    // Run all analysis phases
-    const allErrors = [
-      ...this.analyzeSpelling(text),
-      ...this.analyzeGrammar(text),
-      ...this.analyzeMedicalTerminology(text),
-      ...this.analyzeProfessionalFormatting(text)
-    ];
-    
-    // Categorize errors
-    allErrors.forEach(error => {
-      const category = error.type || 'unknown';
-      if (!analysis.errorsByCategory[category]) {
-        analysis.errorsByCategory[category] = [];
-      }
-      analysis.errorsByCategory[category].push(error);
-      
-      if (error.rag_enabled) {
-        analysis.ragEnhancementsApplied++;
-      }
-    });
-    
-    // Calculate quality scores
-    const totalWords = text.split(/\s+/).length;
-    const spellingErrors = analysis.errorsByCategory['spelling']?.length || 0;
-    const grammarErrors = analysis.errorsByCategory['grammar']?.length || 0;
-    const medicalErrors = analysis.errorsByCategory['medical_terminology']?.length || 0;
-    const formatErrors = analysis.errorsByCategory['formatting']?.length || 0;
-    
-    analysis.spellingAccuracy = Math.max(0, 100 - (spellingErrors / totalWords * 100));
-    analysis.grammarAccuracy = Math.max(0, 100 - (grammarErrors / totalWords * 100));
-    analysis.medicalTerminologyAccuracy = Math.max(0, 100 - (medicalErrors / totalWords * 100));
-    analysis.formatAccuracy = Math.max(0, 100 - (formatErrors / totalWords * 100));
-    
-    // Overall quality calculation
-    analysis.overallQuality = (
-      analysis.spellingAccuracy * 0.3 +
-      analysis.grammarAccuracy * 0.3 +
-      analysis.medicalTerminologyAccuracy * 0.25 +
-      analysis.formatAccuracy * 0.15
-    );
-    
-    // Professional readiness assessment
-    analysis.professionalReadiness = (
-      analysis.overallQuality >= 85 &&
-      spellingErrors <= 2 &&
-      grammarErrors <= 3 &&
-      medicalErrors === 0
-    );
-    
-    // ML confidence score
-    const avgConfidence = allErrors.length > 0 
-      ? allErrors.reduce((sum, err) => sum + (err.confidence || 0.5), 0) / allErrors.length
-      : 1.0;
-    analysis.mlConfidenceScore = avgConfidence * 100;
-    
-    // Generate recommendations
-    this.generateRecommendations(analysis, allErrors);
-    
-    return analysis;
-  }
-
-  /**
-   * Generate professional recommendations for improvement
-   */
-  generateRecommendations(analysis, allErrors) {
-    if (analysis.spellingAccuracy < 95) {
-      analysis.recommendations.push({
-        category: 'spelling',
-        priority: 'high',
-        message: 'Review spelling accuracy. Consider using spell-check tools.',
-        errorCount: analysis.errorsByCategory['spelling']?.length || 0
-      });
-    }
-    
-    if (analysis.grammarAccuracy < 90) {
-      analysis.recommendations.push({
-        category: 'grammar',
-        priority: 'high',
-        message: 'Improve sentence structure and grammar for professional presentation.',
-        errorCount: analysis.errorsByCategory['grammar']?.length || 0
-      });
-    }
-    
-    if (analysis.medicalTerminologyAccuracy < 98) {
-      analysis.recommendations.push({
-        category: 'medical',
-        priority: 'critical',
-        message: 'Verify all medical terminology for accuracy and proper spelling.',
-        errorCount: analysis.errorsByCategory['medical_terminology']?.length || 0
-      });
-    }
-    
-    if (!analysis.professionalReadiness) {
-      analysis.recommendations.push({
-        category: 'overall',
-        priority: 'critical',
-        message: 'Report requires additional review before professional use.',
-        improvementNeeded: Math.ceil(85 - analysis.overallQuality) + '%'
-      });
-    }
-    
-    if (analysis.ragEnhancementsApplied > 0) {
-      analysis.recommendations.push({
-        category: 'enhancement',
-        priority: 'info',
-        message: `Applied ${analysis.ragEnhancementsApplied} RAG-enhanced corrections for improved accuracy.`,
-        ragCount: analysis.ragEnhancementsApplied
-      });
-    }
-  }
-
-  /**
-   * Count medical terms for terminology density analysis
-   */
-  countMedicalTerms(text) {
-    const words = text.toLowerCase().split(/\s+/);
-    let count = 0;
-    
-    for (const word of words) {
-      if (this.medicalTerms[word] || this.commonMedicalWords.includes(word)) {
-        count++;
-      }
-    }
-    
-    return count;
-  }
-
-  /**
-   * Preserve original case when making corrections
-   */
-  preserveCase(original, corrected) {
-    if (!original || !corrected) return corrected;
-    
-    // If original is all uppercase
-    if (original === original.toUpperCase()) {
-      return corrected.toUpperCase();
-    }
-    
-    // If original starts with uppercase
-    if (original[0] === original[0].toUpperCase()) {
-      return corrected.charAt(0).toUpperCase() + corrected.slice(1).toLowerCase();
-    }
-    
-    // Default to lowercase
-    return corrected.toLowerCase();
-  }
-
-  /**
-   * Escape special regex characters for safe text replacement
-   * @param {string} text - Text to escape
-   * @returns {string} Escaped text
-   */
-  escapeRegExp(text) {
-    return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 }
 
