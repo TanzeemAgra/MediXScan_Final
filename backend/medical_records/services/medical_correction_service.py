@@ -372,7 +372,7 @@ class MedicalReportCorrectionService:
         }
     
     def _detect_spelling_errors(self, text: str) -> List[Dict[str, Any]]:
-        """Detect spelling errors in medical text"""
+        """Enhanced spelling error detection including repeated characters and advanced patterns"""
         errors = []
         
         # Find all words with their positions in the original text
@@ -382,7 +382,21 @@ class MedicalReportCorrectionService:
             word = match.group().lower()
             original_word = match.group()
             
-            # Check if word is in our correction dictionary
+            # 1. Check for repeated character patterns (like "suggesteddddddddd")
+            repeated_char_correction = self._detect_repeated_characters(original_word)
+            if repeated_char_correction:
+                errors.append({
+                    'type': 'spelling',
+                    'subtype': 'repeated_characters',
+                    'original': original_word,
+                    'correction': repeated_char_correction,
+                    'position': (match.start(), match.end()),
+                    'confidence': 0.98,
+                    'message': f'Repeated characters detected and corrected'
+                })
+                continue
+            
+            # 2. Check if word is in our correction dictionary
             if word in self.medical_dictionary:
                 # Get the corrected word and preserve original capitalization
                 corrected = self.medical_dictionary[word]
@@ -396,8 +410,152 @@ class MedicalReportCorrectionService:
                     'position': (match.start(), match.end()),
                     'confidence': 0.95
                 })
+                continue
+            
+            # 3. Advanced pattern detection for medical terms
+            advanced_correction = self._detect_advanced_medical_patterns(original_word)
+            if advanced_correction:
+                errors.append({
+                    'type': 'spelling',
+                    'subtype': 'advanced_medical',
+                    'original': original_word,
+                    'correction': advanced_correction['correction'],
+                    'position': (match.start(), match.end()),
+                    'confidence': advanced_correction['confidence'],
+                    'message': f'Advanced medical term correction: {advanced_correction["reason"]}'
+                })
         
         return errors
+    
+    def _detect_repeated_characters(self, word: str) -> Optional[str]:
+        """
+        Detect and fix repeated characters (e.g., 'suggesteddddddddd' -> 'suggested')
+        Returns the corrected word or None if no repeated characters found
+        """
+        if len(word) < 4:
+            return None
+        
+        # Pattern to find 3+ consecutive identical characters
+        repeated_pattern = re.compile(r'(.)\1{2,}')
+        matches = list(repeated_pattern.finditer(word.lower()))
+        
+        if not matches:
+            return None
+        
+        corrected = word.lower()
+        
+        # Process each repeated character group
+        for match in reversed(matches):  # Reverse to maintain positions
+            repeated_char = match.group(1)
+            full_match = match.group()
+            
+            # Common legitimate double letters in medical/English terms
+            legitimate_doubles = ['ll', 'ss', 'ff', 'mm', 'nn', 'pp', 'tt', 'ee', 'oo']
+            double_char = repeated_char + repeated_char
+            
+            if double_char in legitimate_doubles:
+                # Replace with double character (e.g., "ssss" -> "ss")
+                corrected = corrected.replace(full_match, double_char, 1)
+            else:
+                # Replace with single character (e.g., "dddd" -> "d")
+                corrected = corrected.replace(full_match, repeated_char, 1)
+        
+        # Preserve original capitalization
+        if word[0].isupper():
+            corrected = corrected.capitalize()
+        elif word.isupper():
+            corrected = corrected.upper()
+        
+        return corrected if corrected != word.lower() else None
+    
+    def _detect_advanced_medical_patterns(self, word: str) -> Optional[Dict[str, Any]]:
+        """
+        Advanced pattern detection for medical terminology corrections
+        """
+        word_lower = word.lower()
+        
+        # Medical terms that commonly get misspelled
+        advanced_corrections = {
+            # Common medical misspellings
+            'suggestd': 'suggested',
+            'sugestd': 'suggested', 
+            'sugeste': 'suggested',
+            'stagng': 'staging',
+            'stag': 'stage',
+            'stagin': 'staging',
+            'metabolc': 'metabolic',
+            'metablic': 'metabolic',
+            'diferential': 'differential',
+            'differental': 'differential',
+            'considrations': 'considerations',
+            'considration': 'consideration',
+            'histologicaly': 'histologically',
+            'histologicall': 'histologically',
+            'malignacy': 'malignancy',
+            'malignanci': 'malignancy',
+            'metastases': 'metastases',  # Verify correct
+            'metastasis': 'metastasis',   # Verify correct
+            'lymphadenopaty': 'lymphadenopathy',
+            'hypermetablic': 'hypermetabolic',
+            'biodistrbution': 'biodistribution',
+            'precarinal': 'precarinal',    # Verify correct
+            'perihilar': 'perihilar',      # Verify correct
+            'parenchymal': 'parenchymal',  # Verify correct
+            'degenerative': 'degenerative', # Verify correct
+        }
+        
+        # Direct lookup
+        if word_lower in advanced_corrections:
+            corrected = advanced_corrections[word_lower]
+            # Preserve capitalization
+            if word[0].isupper():
+                corrected = corrected.capitalize()
+            elif word.isupper():
+                corrected = corrected.upper()
+                
+            return {
+                'correction': corrected,
+                'confidence': 0.92,
+                'reason': 'Common medical terminology correction'
+            }
+        
+        # Fuzzy matching for close medical terms
+        for incorrect, correct in advanced_corrections.items():
+            if self._calculate_levenshtein_distance(word_lower, incorrect) <= 2 and len(word) > 3:
+                # Preserve capitalization
+                corrected = correct
+                if word[0].isupper():
+                    corrected = corrected.capitalize()
+                elif word.isupper():
+                    corrected = corrected.upper()
+                    
+                return {
+                    'correction': corrected,
+                    'confidence': 0.88,
+                    'reason': 'Fuzzy match medical terminology correction'
+                }
+        
+        return None
+    
+    def _calculate_levenshtein_distance(self, s1: str, s2: str) -> int:
+        """Calculate Levenshtein distance between two strings"""
+        if len(s1) < len(s2):
+            return self._calculate_levenshtein_distance(s2, s1)
+        
+        if len(s2) == 0:
+            return len(s1)
+        
+        previous_row = list(range(len(s2) + 1))
+        for i, c1 in enumerate(s1):
+            current_row = [i + 1]
+            for j, c2 in enumerate(s2):
+                insertions = previous_row[j + 1] + 1
+                deletions = current_row[j] + 1
+                substitutions = previous_row[j] + (c1 != c2)
+                current_row.append(min(insertions, deletions, substitutions))
+            previous_row = current_row
+        
+        return previous_row[-1]
     
     def _detect_grammar_errors(self, text: str) -> List[Dict[str, Any]]:
         """Detect grammar errors using rule-based patterns"""

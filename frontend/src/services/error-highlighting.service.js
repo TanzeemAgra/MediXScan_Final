@@ -63,6 +63,42 @@ class ErrorHighlightingService {
       'small effusion': { correct: 'small pleural effusion', type: 'enhancement', confidence: 0.7 },
       'large effusion': { correct: 'large pleural effusion', type: 'enhancement', confidence: 0.7 },
       'bilateral effusion': { correct: 'bilateral pleural effusion', type: 'enhancement', confidence: 0.8 },
+      
+      // Advanced medical terminology - Oncology/Radiology focused
+      'malignancy': { correct: 'malignancy', type: 'verified', confidence: 1.0 },
+      'lymphadenopathy': { correct: 'lymphadenopathy', type: 'verified', confidence: 1.0 },
+      'hypermetabolic': { correct: 'hypermetabolic', type: 'verified', confidence: 1.0 },
+      'biodistribution': { correct: 'biodistribution', type: 'verified', confidence: 1.0 },
+      'precarinal': { correct: 'precarinal', type: 'verified', confidence: 1.0 },
+      'perihilar': { correct: 'perihilar', type: 'verified', confidence: 1.0 },
+      'intramediastinal': { correct: 'intramediastinal', type: 'verified', confidence: 1.0 },
+      'parenchymal': { correct: 'parenchymal', type: 'verified', confidence: 1.0 },
+      'degenerative': { correct: 'degenerative', type: 'verified', confidence: 1.0 },
+      'metastases': { correct: 'metastases', type: 'verified', confidence: 1.0 },
+      'staging': { correct: 'staging', type: 'verified', confidence: 1.0 },
+      'metabolic staging': { correct: 'metabolic staging', type: 'verified', confidence: 1.0 },
+      'differential': { correct: 'differential', type: 'verified', confidence: 1.0 },
+      'considerations': { correct: 'considerations', type: 'verified', confidence: 1.0 },
+      'histologically': { correct: 'histologically', type: 'verified', confidence: 1.0 },
+      'nsclc': { correct: 'NSCLC (non-small cell lung cancer)', type: 'abbreviation', confidence: 0.9 },
+      'fdg': { correct: 'FDG (fluorodeoxyglucose)', type: 'abbreviation', confidence: 0.9 },
+      'suv': { correct: 'SUV (standardized uptake value)', type: 'abbreviation', confidence: 0.9 },
+      'pet': { correct: 'PET (positron emission tomography)', type: 'abbreviation', confidence: 0.9 },
+      
+      // Common medical misspellings with corrections
+      'fibriosis': { correct: 'fibrosis', type: 'spelling', confidence: 0.95 },
+      'lyphoma': { correct: 'lymphoma', type: 'spelling', confidence: 0.95 },
+      'tracer': { correct: 'tracer', type: 'verified', confidence: 1.0 },
+      'lesion': { correct: 'lesion', type: 'verified', confidence: 1.0 },
+      'hilum': { correct: 'hilum', type: 'verified', confidence: 1.0 },
+      'hilar': { correct: 'hilar', type: 'verified', confidence: 1.0 },
+      'bronchus': { correct: 'bronchus', type: 'verified', confidence: 1.0 },
+      'mediastinum': { correct: 'mediastinum', type: 'verified', confidence: 1.0 },
+      'adrenal': { correct: 'adrenal', type: 'verified', confidence: 1.0 },
+      'hepatic': { correct: 'hepatic', type: 'verified', confidence: 1.0 },
+      'pleural': { correct: 'pleural', type: 'verified', confidence: 1.0 },
+      'physiological': { correct: 'physiological', type: 'verified', confidence: 1.0 },
+      'unenhanced': { correct: 'unenhanced', type: 'verified', confidence: 1.0 },
     };
 
     // English grammar patterns and corrections
@@ -284,11 +320,12 @@ class ErrorHighlightingService {
   }
 
   /**
-   * Detect grammar errors
+   * Detect grammar errors with enhanced soft-coded algorithms
    */
   detectGrammarErrors(text) {
     const errors = [];
     
+    // Apply predefined grammar rules
     Object.entries(this.grammarRules).forEach(([ruleName, rule]) => {
       const matches = [...text.matchAll(rule.pattern)];
       matches.forEach(match => {
@@ -306,7 +343,221 @@ class ErrorHighlightingService {
       });
     });
 
+    // Enhanced soft-coded error detection
+    const advancedErrors = this.detectAdvancedSpellingErrors(text);
+    errors.push(...advancedErrors);
+
     return errors;
+  }
+
+  /**
+   * Advanced spelling error detection using soft-coded algorithms
+   * Detects repeated characters, common typos, and pattern-based errors
+   */
+  detectAdvancedSpellingErrors(text) {
+    const errors = [];
+    const words = text.split(/\s+/);
+    
+    words.forEach((word, index) => {
+      const cleanWord = word.replace(/[^\w]/g, '').toLowerCase();
+      if (cleanWord.length < 3) return; // Skip very short words
+      
+      // 1. Detect repeated characters (like "suggesteddddddddd")
+      const repeatedCharError = this.detectRepeatedCharacters(word, cleanWord);
+      if (repeatedCharError) {
+        errors.push({
+          original: word,
+          suggestion: repeatedCharError.corrected,
+          type: 'spelling',
+          confidence: repeatedCharError.confidence,
+          message: `Repeated characters detected: "${word}" → "${repeatedCharError.corrected}"`,
+          position: { start: index, end: index }
+        });
+        return; // Don't check further if repeated chars found
+      }
+      
+      // 2. Common typing errors and transpositions
+      const typingError = this.detectTypingErrors(cleanWord);
+      if (typingError) {
+        errors.push({
+          original: word,
+          suggestion: typingError.corrected,
+          type: 'spelling',
+          confidence: typingError.confidence,
+          message: `Spelling correction: "${word}" → "${typingError.corrected}"`,
+          position: { start: index, end: index }
+        });
+        return;
+      }
+      
+      // 3. Medical terminology fuzzy matching
+      const medicalFuzzy = this.fuzzyMatchMedicalTerms(cleanWord);
+      if (medicalFuzzy) {
+        errors.push({
+          original: word,
+          suggestion: medicalFuzzy.corrected,
+          type: 'medical',
+          confidence: medicalFuzzy.confidence,
+          message: `Medical term correction: "${word}" → "${medicalFuzzy.corrected}"`,
+          position: { start: index, end: index }
+        });
+      }
+    });
+
+    return errors;
+  }
+
+  /**
+   * Detect and fix repeated characters
+   */
+  detectRepeatedCharacters(originalWord, cleanWord) {
+    // Pattern: 3+ consecutive identical characters (except for legitimate doubles like "good", "book")
+    const repeatedPattern = /(.)\1{2,}/g;
+    const matches = [...cleanWord.matchAll(repeatedPattern)];
+    
+    if (matches.length === 0) return null;
+    
+    let corrected = cleanWord;
+    let confidence = 0.95; // High confidence for obvious repeated chars
+    
+    matches.forEach(match => {
+      const repeatedChar = match[1];
+      const fullMatch = match[0];
+      
+      // Common legitimate double letters in medical/English terms
+      const legitimateDoubles = ['ll', 'ss', 'ff', 'mm', 'nn', 'pp', 'tt', 'ee', 'oo'];
+      const doubleChar = repeatedChar + repeatedChar;
+      
+      if (legitimateDoubles.includes(doubleChar)) {
+        // Replace with double character
+        corrected = corrected.replace(fullMatch, doubleChar);
+      } else {
+        // Replace with single character
+        corrected = corrected.replace(fullMatch, repeatedChar);
+      }
+    });
+    
+    // Maintain original case pattern
+    const finalCorrected = this.preserveCase(originalWord, corrected);
+    
+    return corrected !== cleanWord ? { corrected: finalCorrected, confidence } : null;
+  }
+
+  /**
+   * Detect common typing errors and transpositions
+   */
+  detectTypingErrors(word) {
+    // Common medical term corrections not in main dictionary
+    const commonCorrections = {
+      // Medical terms
+      'malignancy': 'malignancy', // Verify correct spelling
+      'staging': 'staging',
+      'metastases': 'metastases',
+      'lymphadenopathy': 'lymphadenopathy',
+      'hypermetabolic': 'hypermetabolic',
+      'biodistribution': 'biodistribution',
+      'precarinal': 'precarinal',
+      'perihilar': 'perihilar',
+      'intramediastinal': 'intramediastinal',
+      'parenchymal': 'parenchymal',
+      'degenerative': 'degenerative',
+      
+      // Common misspellings
+      'sugest': 'suggest',
+      'sugested': 'suggested',
+      'stag': 'stage',
+      'stagin': 'staging',
+      'recomend': 'recommend',
+      'recomended': 'recommended',
+      'diferential': 'differential',
+      'considration': 'consideration',
+      'histologicaly': 'histologically',
+      'metabolc': 'metabolic',
+      'suggestd': 'suggested',
+      'stagng': 'staging'
+    };
+    
+    // Direct lookup
+    if (commonCorrections[word]) {
+      return { corrected: commonCorrections[word], confidence: 0.9 };
+    }
+    
+    // Fuzzy matching for close matches
+    for (const [incorrect, correct] of Object.entries(commonCorrections)) {
+      if (this.calculateLevenshteinDistance(word, incorrect) <= 2 && word.length > 3) {
+        return { corrected: correct, confidence: 0.85 };
+      }
+    }
+    
+    return null;
+  }
+
+  /**
+   * Fuzzy match against medical terms dictionary
+   */
+  fuzzyMatchMedicalTerms(word) {
+    const medicalTermsList = Object.keys(this.medicalTerms);
+    
+    for (const term of medicalTermsList) {
+      const distance = this.calculateLevenshteinDistance(word, term);
+      const similarity = 1 - (distance / Math.max(word.length, term.length));
+      
+      // Only suggest if similarity is high and words are similar length
+      if (similarity > 0.8 && Math.abs(word.length - term.length) <= 2) {
+        const termData = this.medicalTerms[term];
+        return {
+          corrected: termData.correct,
+          confidence: similarity * 0.8 // Reduced confidence for fuzzy matches
+        };
+      }
+    }
+    
+    return null;
+  }
+
+  /**
+   * Calculate Levenshtein distance for fuzzy matching
+   */
+  calculateLevenshteinDistance(str1, str2) {
+    const matrix = [];
+    
+    for (let i = 0; i <= str2.length; i++) {
+      matrix[i] = [i];
+    }
+    
+    for (let j = 0; j <= str1.length; j++) {
+      matrix[0][j] = j;
+    }
+    
+    for (let i = 1; i <= str2.length; i++) {
+      for (let j = 1; j <= str1.length; j++) {
+        if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+          matrix[i][j] = matrix[i - 1][j - 1];
+        } else {
+          matrix[i][j] = Math.min(
+            matrix[i - 1][j - 1] + 1, // substitution
+            matrix[i][j - 1] + 1,     // insertion
+            matrix[i - 1][j] + 1      // deletion
+          );
+        }
+      }
+    }
+    
+    return matrix[str2.length][str1.length];
+  }
+
+  /**
+   * Preserve original case pattern when correcting
+   */
+  preserveCase(original, corrected) {
+    if (original === original.toUpperCase()) {
+      return corrected.toUpperCase();
+    } else if (original === original.toLowerCase()) {
+      return corrected.toLowerCase();
+    } else if (original[0] === original[0].toUpperCase()) {
+      return corrected.charAt(0).toUpperCase() + corrected.slice(1).toLowerCase();
+    }
+    return corrected;
   }
 
   /**
