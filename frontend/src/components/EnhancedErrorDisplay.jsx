@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Tab, Nav, Badge, Button, Tooltip, OverlayTrigger, Form, Row, Col } from 'react-bootstrap';
 import errorHighlightingService from '../services/error-highlighting.service';
+import { medicalCorrectionConfig } from '../config/medical-correction.config';
 import '../assets/scss/error-highlighting.scss';
 
 const EnhancedErrorDisplay = ({ originalText, result, onClose }) => {
@@ -168,27 +169,79 @@ const EnhancedErrorDisplay = ({ originalText, result, onClose }) => {
   };
 
   const renderComparisonView = () => {
+    // Get detected errors for focused comparison
+    const detectedErrors = analysis.errors || [];
+    
+    // Set the focused comparison configuration
+    errorHighlightingService.focusedConfig = medicalCorrectionConfig.focusedComparison;
+    
     const comparison = errorHighlightingService.generateComparisonHtml(
       originalText, 
-      analysis.correctedText
+      analysis.correctedText,
+      detectedErrors
     );
     
     return (
-      <div className="diff-container">
-        <div className="diff-column">
-          <h6>📄 Original Text</h6>
-          <div 
-            className="report-text"
-            dangerouslySetInnerHTML={{ __html: comparison.originalHtml }}
-          />
+      <div className="focused-diff-container">
+        <div className="row">
+          <div className="col-md-6">
+            <div className="focused-diff-column">
+              <h6 className="text-warning">
+                <i className="fas fa-exclamation-triangle me-2"></i>
+                Original Issues ({comparison.corrections?.length || 0})
+              </h6>
+              <div 
+                className="focused-comparison-content"
+                dangerouslySetInnerHTML={{ __html: comparison.originalHtml }}
+              />
+            </div>
+          </div>
+          <div className="col-md-6">
+            <div className="focused-diff-column">
+              <h6 className="text-success">
+                <i className="fas fa-check-circle me-2"></i>
+                Corrected Words ({comparison.corrections?.length || 0})
+              </h6>
+              <div 
+                className="focused-comparison-content"
+                dangerouslySetInnerHTML={{ __html: comparison.correctedHtml }}
+              />
+            </div>
+          </div>
         </div>
-        <div className="diff-column">
-          <h6>✅ Corrected Text</h6>
-          <div 
-            className="report-text"
-            dangerouslySetInnerHTML={{ __html: comparison.correctedHtml }}
-          />
-        </div>
+        
+        {comparison.corrections?.length > 0 && (
+          <div className="mt-4 p-3 bg-light rounded">
+            <h6 className="text-info">
+              <i className="fas fa-info-circle me-2"></i>
+              Correction Summary
+            </h6>
+            <div className="row text-center">
+              <div className="col-md-3">
+                <div className="text-primary h4">{comparison.corrections.length}</div>
+                <small className="text-muted">Total Corrections</small>
+              </div>
+              <div className="col-md-3">
+                <div className="text-success h4">
+                  {Math.round(comparison.corrections.reduce((acc, c) => acc + c.confidence, 0) / comparison.corrections.length * 100)}%
+                </div>
+                <small className="text-muted">Avg Confidence</small>
+              </div>
+              <div className="col-md-3">
+                <div className="text-info h4">
+                  {[...new Set(comparison.corrections.map(c => c.type))].length}
+                </div>
+                <small className="text-muted">Error Types</small>
+              </div>
+              <div className="col-md-3">
+                <div className="text-warning h4">
+                  {comparison.corrections.filter(c => c.confidence < 0.8).length}
+                </div>
+                <small className="text-muted">Low Confidence</small>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -391,11 +444,11 @@ const EnhancedErrorDisplay = ({ originalText, result, onClose }) => {
 
           <Tab.Pane eventKey="comparison">
             <div className="comparison-content">
-              <h6>📋 Side-by-Side Text Comparison</h6>
+              <h6>🎯 Focused Word-by-Word Comparison</h6>
               <div className="mb-3">
-                <small className="text-muted">
-                  <span className="diff-removed" style={{ padding: '1px 3px', marginRight: '10px' }}>Removed text</span>
-                  <span className="diff-added" style={{ padding: '1px 3px' }}>Added text</span>
+                <small className="text-info">
+                  <i className="fas fa-info-circle me-1"></i>
+                  <strong>Shows only corrected words</strong> instead of entire report content for focused review
                 </small>
               </div>
               {renderComparisonView()}

@@ -1408,6 +1408,208 @@ class ErrorHighlightingService {
   }
 
   /**
+   * FOCUSED COMPARISON HTML GENERATION
+   * Shows only corrected words instead of entire report
+   * @param {string} originalText - Original text
+   * @param {string} correctedText - Corrected text
+   * @param {Array} errors - Array of detected errors (optional)
+   * @returns {Object} HTML for focused comparison
+   */
+  generateComparisonHtml(originalText, correctedText, errors = []) {
+    // Fallback configuration (will be overridden by component)
+    this.focusedConfig = this.focusedConfig || {
+      enabled: true,
+      showOnlyCorrectedWords: true,
+      maxWordsPerCorrection: 3,
+      groupSimilarCorrections: true,
+      highlightStyle: {
+        originalBackground: '#ffeaa7',
+        originalBorder: '#fdcb6e',
+        correctedBackground: '#d4edda',
+        correctedBorder: '#28a745'
+      },
+      displaySettings: {
+        showConfidence: true,
+        showErrorType: true,
+        showWordCount: true,
+        compactView: true
+      }
+    };
+
+    // If focused comparison is disabled, return full text comparison
+    if (!this.focusedConfig?.enabled || !this.focusedConfig?.showOnlyCorrectedWords) {
+      return {
+        originalHtml: originalText,
+        correctedHtml: correctedText
+      };
+    }
+
+    // Extract corrections from differences
+    const corrections = this.extractCorrections(originalText, correctedText, errors);
+    
+    if (corrections.length === 0) {
+      return {
+        originalHtml: '<div class="text-muted">No corrections found</div>',
+        correctedHtml: '<div class="text-success">✅ No corrections needed</div>'
+      };
+    }
+
+    // Generate focused comparison HTML
+    const originalHtml = this.generateFocusedOriginalHtml(corrections);
+    const correctedHtml = this.generateFocusedCorrectedHtml(corrections);
+
+    return {
+      originalHtml,
+      correctedHtml,
+      corrections
+    };
+  }
+
+  /**
+   * Extract corrections by comparing original and corrected text
+   */
+  extractCorrections(originalText, correctedText, errors = []) {
+    const corrections = [];
+    
+    // If errors are provided, use them directly
+    if (errors && errors.length > 0) {
+      errors.forEach((error, index) => {
+        const original = error.original || error.error || '';
+        const corrected = error.suggestion || error.correction || '';
+        
+        if (original && corrected && original !== corrected) {
+          corrections.push({
+            id: index + 1,
+            original: original.trim(),
+            corrected: corrected.trim(),
+            type: error.type || 'correction',
+            confidence: error.confidence || 0.9,
+            context: this.getWordContext(originalText, original)
+          });
+        }
+      });
+      return corrections;
+    }
+
+    // Simple word-by-word comparison fallback
+    const originalWords = originalText.split(/\s+/);
+    const correctedWords = correctedText.split(/\s+/);
+    
+    let correctionId = 1;
+    for (let i = 0; i < Math.max(originalWords.length, correctedWords.length); i++) {
+      const original = originalWords[i] || '';
+      const corrected = correctedWords[i] || '';
+      
+      if (original !== corrected && original && corrected) {
+        corrections.push({
+          id: correctionId++,
+          original,
+          corrected,
+          type: 'text_change',
+          confidence: 0.85,
+          context: this.getWordContext(originalText, original)
+        });
+      }
+    }
+    
+    return corrections;
+  }
+
+  /**
+   * Get word context (surrounding words)
+   */
+  getWordContext(text, word) {
+    const maxWords = this.focusedConfig?.maxWordsPerCorrection || 3;
+    const words = text.split(/\s+/);
+    const index = words.findIndex(w => w.includes(word));
+    
+    if (index === -1) return '';
+    
+    const start = Math.max(0, index - maxWords);
+    const end = Math.min(words.length, index + maxWords + 1);
+    
+    return words.slice(start, end).join(' ');
+  }
+
+  /**
+   * Generate focused HTML for original text (showing errors)
+   */
+  generateFocusedOriginalHtml(corrections) {
+    const style = this.focusedConfig?.highlightStyle || {};
+    let html = '<div class="focused-comparison-container">';
+    
+    corrections.forEach((correction, index) => {
+      html += `
+        <div class="focused-correction-item mb-3 p-3 border rounded">
+          <div class="correction-header mb-2">
+            <span class="badge bg-warning text-dark me-2">#${correction.id}</span>
+            <span class="badge bg-secondary me-2">${correction.type}</span>
+            ${this.focusedConfig?.displaySettings?.showConfidence ? 
+              `<span class="badge bg-info">${Math.round(correction.confidence * 100)}%</span>` : ''}
+          </div>
+          <div class="correction-content">
+            <div class="original-word" 
+                 style="background-color: ${style.originalBackground || '#ffeaa7'}; 
+                        border: 2px solid ${style.originalBorder || '#fdcb6e'}; 
+                        padding: 8px 12px; 
+                        border-radius: 6px; 
+                        display: inline-block;
+                        font-weight: bold;">
+              "${correction.original}"
+            </div>
+            ${correction.context ? `
+              <div class="context-info mt-2">
+                <small class="text-muted">Context: ...${correction.context}...</small>
+              </div>
+            ` : ''}
+          </div>
+        </div>`;
+    });
+    
+    html += '</div>';
+    return html;
+  }
+
+  /**
+   * Generate focused HTML for corrected text (showing fixes)
+   */
+  generateFocusedCorrectedHtml(corrections) {
+    const style = this.focusedConfig?.highlightStyle || {};
+    let html = '<div class="focused-comparison-container">';
+    
+    corrections.forEach((correction, index) => {
+      html += `
+        <div class="focused-correction-item mb-3 p-3 border rounded">
+          <div class="correction-header mb-2">
+            <span class="badge bg-success text-white me-2">✅ #${correction.id}</span>
+            <span class="badge bg-secondary me-2">${correction.type}</span>
+            ${this.focusedConfig?.displaySettings?.showConfidence ? 
+              `<span class="badge bg-success">${Math.round(correction.confidence * 100)}%</span>` : ''}
+          </div>
+          <div class="correction-content">
+            <div class="corrected-word" 
+                 style="background-color: ${style.correctedBackground || '#d4edda'}; 
+                        border: 2px solid ${style.correctedBorder || '#28a745'}; 
+                        padding: 8px 12px; 
+                        border-radius: 6px; 
+                        display: inline-block;
+                        font-weight: bold;">
+              "${correction.corrected}"
+            </div>
+            <div class="correction-arrow mt-2">
+              <small class="text-muted">
+                <strong>Changed from:</strong> "${correction.original}" → "${correction.corrected}"
+              </small>
+            </div>
+          </div>
+        </div>`;
+    });
+    
+    html += '</div>';
+    return html;
+  }
+
+  /**
    * Utility function to escape special regex characters
    */
   escapeRegExp(string) {
