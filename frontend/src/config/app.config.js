@@ -46,6 +46,25 @@ const config = {
     enableCalendar: true,
     enableReports: true
   },
+
+  // Logo Configuration
+  logo: {
+    // Display options: 'both', 'image-only', 'text-only'
+    displayMode: 'text-only',
+    showImage: false,
+    showText: true,
+    image: {
+      src: '/assets/images/medixscan-logo.svg',
+      alt: 'MediXScan Logo',
+      height: '30',
+      className: 'logo-normal img-fluid mb-3'
+    },
+    text: {
+      content: 'MediXScan',
+      className: 'brand-name fw-bold fs-4',
+      showIcon: true // Optional icon next to text
+    }
+  },
   
   // Medical Specializations
   specializations: [

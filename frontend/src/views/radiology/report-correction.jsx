@@ -4,6 +4,7 @@ import correctionService from '../../services/correction.service';
 import { useURLManager, parseQueryParams } from '../../utils/url.utils';
 import EnhancedErrorDisplay from '../../components/EnhancedErrorDisplay';
 import errorHighlightingService from '../../services/error-highlighting.service';
+import { medicalCorrectionConfig, correctionUtils } from '../../config/medical-correction.config';
 // Connection components temporarily removed
 
 // RAG Animation Styles
@@ -221,13 +222,87 @@ const ReportCorrection = () => {
     }
   };
 
-  // Simple client-side correction stub: minor grammar fixes and punctuation normalization
+  // Comprehensive 4-module correction system with soft coding
   const localCorrection = (inputText) => {
     if (!inputText) return '';
     
-    // Use the enhanced error detection service for better corrections
-    const analysis = errorHighlightingService.analyzeText(inputText);
-    return analysis.correctedText;
+    // Apply comprehensive correction modules
+    let correctedText = inputText;
+    let allCorrections = [];
+    
+    // Module 1: Letter Repetition Detection & Correction
+    if (medicalCorrectionConfig.letterRepetition.enabled) {
+      const letterResult = correctionUtils.applyLetterRepetitionCorrections(correctedText, medicalCorrectionConfig);
+      correctedText = letterResult.text;
+      allCorrections = [...allCorrections, ...letterResult.corrections];
+    }
+    
+    // Module 2: Medical Terms & Abbreviations
+    if (medicalCorrectionConfig.medicalTerms.enabled) {
+      const medicalResult = correctionUtils.applyMedicalCorrections(correctedText, medicalCorrectionConfig);
+      correctedText = medicalResult.text;
+      allCorrections = [...allCorrections, ...medicalResult.corrections];
+    }
+    
+    // Module 3: Spelling Corrections
+    if (medicalCorrectionConfig.spelling.enabled) {
+      medicalCorrectionConfig.spelling.corrections.forEach(correction => {
+        if (correction.confidence >= medicalCorrectionConfig.spelling.minimumConfidence) {
+          const regex = new RegExp(`\\b${correction.from}\\b`, 'gi');
+          const matches = correctedText.match(regex);
+          if (matches) {
+            matches.forEach(match => {
+              allCorrections.push({
+                type: 'Spelling',
+                original: match,
+                corrected: correction.to,
+                confidence: correction.confidence
+              });
+            });
+            correctedText = correctedText.replace(regex, correction.to);
+          }
+        }
+      });
+    }
+    
+    // Module 4: Grammar Corrections
+    if (medicalCorrectionConfig.grammar.enabled) {
+      medicalCorrectionConfig.grammar.rules.forEach(rule => {
+        if (rule.patterns) {
+          rule.patterns.forEach(pattern => {
+            if (pattern.confidence >= medicalCorrectionConfig.grammar.minimumConfidence) {
+              const matches = correctedText.match(pattern.from);
+              if (matches) {
+                matches.forEach(match => {
+                  allCorrections.push({
+                    type: 'Grammar',
+                    original: match,
+                    corrected: pattern.to,
+                    confidence: pattern.confidence
+                  });
+                });
+                correctedText = correctedText.replace(pattern.from, pattern.to);
+              }
+            }
+          });
+        }
+      });
+    }
+    
+    // Validate medical term preservation
+    const validation = correctionUtils.validateMedicalTerms(correctedText, medicalCorrectionConfig.medicalTerms.protectedTerms);
+    
+    // Log corrections for analysis
+    if (medicalCorrectionConfig.global.logCorrections && allCorrections.length > 0) {
+      console.log('🏥 MediXScan Comprehensive Corrections Applied:', {
+        totalCorrections: allCorrections.length,
+        modules: [...new Set(allCorrections.map(c => c.type))],
+        medicalTermsPreserved: validation.preservationRate,
+        corrections: allCorrections
+      });
+    }
+    
+    return correctedText;
   };
 
   const handleShareReport = async () => {
@@ -265,7 +340,7 @@ const ReportCorrection = () => {
             <div className="d-flex justify-content-between align-items-center">
               <div>
                 <h4>Report Correction</h4>
-                <p className="text-muted mb-0">Submit an imaging report for grammar and medical term correction.</p>
+                <p className="text-muted mb-0">Comprehensive error detection with 4 modules: Grammar, Letter Repetition, Medical Terms, and Spelling correction.</p>
               </div>
               {/* Connection Status temporarily disabled */}
             </div>
@@ -341,18 +416,58 @@ const ReportCorrection = () => {
               </Button>
             </div>
             
-            {/* RAG Status Indicator */}
+            {/* Comprehensive Module Status Indicators */}
             <div className="mt-2">
-              <div className="d-flex align-items-center gap-3">
-                <small className="text-muted d-flex align-items-center">
-                  <span className="badge bg-success me-2">🏥</span>
-                  <strong>RAG-Enhanced:</strong> Medical terminology powered by RadLex, SNOMED CT, and ICD-10 databases
-                </small>
-                {result?.analysis?.metadata?.rag_enabled && (
-                  <small className="text-success">
-                    ✅ {result.analysis.metadata.rag_corrections || 0} RAG corrections applied
+              <div className="d-flex flex-column gap-2">
+                {/* RAG Status */}
+                <div className="d-flex align-items-center gap-3">
+                  <small className="text-muted d-flex align-items-center">
+                    <span className="badge bg-success me-2">🏥</span>
+                    <strong>RAG-Enhanced:</strong> Medical terminology powered by RadLex, SNOMED CT, and ICD-10 databases
                   </small>
-                )}
+                  {result?.analysis?.metadata?.rag_enabled && (
+                    <small className="text-success">
+                      ✅ {result.analysis.metadata.rag_corrections || 0} RAG corrections applied
+                    </small>
+                  )}
+                </div>
+                
+                {/* Comprehensive Module Status */}
+                <div className="d-flex align-items-center gap-3 flex-wrap">
+                  <small className="text-muted">
+                    <strong>Active Correction Modules:</strong>
+                  </small>
+                  <div className="d-flex gap-2 flex-wrap">
+                    {medicalCorrectionConfig.letterRepetition.enabled && (
+                      <span className="badge bg-primary" title="Letter Repetition Detection">
+                        🔤 Letter Repetition
+                      </span>
+                    )}
+                    {medicalCorrectionConfig.spelling.enabled && (
+                      <span className="badge bg-info" title="Spelling Correction">
+                        📝 Spelling
+                      </span>
+                    )}
+                    {medicalCorrectionConfig.medicalTerms.enabled && (
+                      <span className="badge bg-success" title="Medical Terms Standardization">
+                        🏥 Medical Terms
+                      </span>
+                    )}
+                    {medicalCorrectionConfig.grammar.enabled && (
+                      <span className="badge bg-warning text-dark" title="Grammar Correction">
+                        📖 Grammar
+                      </span>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Protection Status */}
+                <div className="d-flex align-items-center gap-2">
+                  <small className="text-success d-flex align-items-center">
+                    <span className="badge bg-success me-2">🛡️</span>
+                    <strong>Medical Term Protection:</strong> {medicalCorrectionConfig.medicalTerms.protectedTerms.length} critical terms protected
+                  </small>
+                </div>
               </div>
             </div>
           </Form>
